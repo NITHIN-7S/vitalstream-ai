@@ -1,11 +1,12 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Activity, Bell, Settings, LogOut, Heart, Thermometer, Wind, User, Phone, Calendar, FileText, ChevronRight, MessageCircle } from "lucide-react";
+import { Activity, Bell, Settings, LogOut, Heart, Thermometer, Wind, User, Phone, Calendar, FileText, ChevronRight, MessageCircle, MapPin } from "lucide-react";
 import VitalCard from "@/components/cards/VitalCard";
 import LiveChart from "@/components/dashboard/LiveChart";
 import ECGWave from "@/components/animations/ECGWave";
+import ContactForm from "@/components/dashboard/ContactForm";
+import NearbyHospitalsMap from "@/components/dashboard/NearbyHospitalsMap";
 
 const PatientDashboard = () => {
   const patientData = {
@@ -68,6 +69,10 @@ const PatientDashboard = () => {
           <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted transition-colors">
             <MessageCircle className="h-5 w-5" />
             Messages
+          </a>
+          <a href="#hospitals" className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted transition-colors">
+            <MapPin className="h-5 w-5" />
+            Nearby Hospitals
           </a>
           <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted transition-colors">
             <Settings className="h-5 w-5" />
@@ -271,7 +276,7 @@ const PatientDashboard = () => {
                 </Button>
               </div>
               <div className="space-y-4">
-                {medications.map((med, index) => (
+                {medications.map((med) => (
                   <div
                     key={med.name}
                     className="flex items-center justify-between p-4 rounded-lg bg-secondary/50"
@@ -334,6 +339,27 @@ const PatientDashboard = () => {
               <ECGWave className="h-full" speed={2} />
             </div>
           </motion.div>
+
+          {/* Nearby Hospitals & Contact Form Section */}
+          <div id="hospitals" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              <h2 className="text-xl font-semibold text-foreground mb-4">Nearby Hospitals</h2>
+              <NearbyHospitalsMap />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <h2 className="text-xl font-semibold text-foreground mb-4">Contact Support</h2>
+              <ContactForm />
+            </motion.div>
+          </div>
         </div>
       </main>
     </div>
