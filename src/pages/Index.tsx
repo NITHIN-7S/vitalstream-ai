@@ -151,10 +151,10 @@ const Index = () => {
               className="grid grid-cols-2 md:grid-cols-4 gap-6"
             >
               {[
-                { value: "99.9%", label: "Uptime" },
+                { value: "Real-Time", label: "Monitoring" },
+                { value: "Cloud", label: "Connected" },
                 { value: "<1s", label: "Alert Time" },
-                { value: "500+", label: "ICU Beds" },
-                { value: "24/7", label: "Monitoring" },
+                { value: "24/7", label: "Alerts Active" },
               ].map((stat, index) => (
                 <motion.div
                   key={stat.label}
@@ -339,11 +339,11 @@ const Index = () => {
               </motion.div>
 
               <h2 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-6">
-                Ready to Transform Your ICU?
+                Start Real-Time Patient Monitoring
               </h2>
               <p className="text-xl text-primary-foreground/80 mb-10 max-w-2xl mx-auto">
-                Join leading hospitals using HealthPulse for intelligent patient monitoring.
-                Start saving lives with real-time data today.
+                Experience intelligent healthcare monitoring with real-time vital signs tracking,
+                automated emergency alerts, and cloud-connected analytics.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
