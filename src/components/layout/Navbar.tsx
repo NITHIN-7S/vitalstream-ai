@@ -10,9 +10,7 @@ const Navbar = () => {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/features", label: "Features" },
-    { href: "/technology", label: "Technology" },
-    { href: "/contact", label: "Contact" },
+    { href: "/about", label: "About" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -72,13 +70,13 @@ const Navbar = () => {
             <Link to="/auth/doctor">
               <Button variant="ghost" size="sm" className="gap-2">
                 <Stethoscope className="h-4 w-4" />
-                Doctor
+                Get Started as Doctor
               </Button>
             </Link>
             <Link to="/auth/patient">
               <Button variant="hero" size="sm" className="gap-2">
                 <User className="h-4 w-4" />
-                Patient
+                Login as Patient
               </Button>
             </Link>
           </div>
@@ -119,13 +117,13 @@ const Navbar = () => {
                 <Link to="/auth/doctor" onClick={() => setIsOpen(false)}>
                   <Button variant="outline" className="w-full gap-2">
                     <Stethoscope className="h-4 w-4" />
-                    Doctor Login
+                    Get Started as Doctor
                   </Button>
                 </Link>
                 <Link to="/auth/patient" onClick={() => setIsOpen(false)}>
                   <Button variant="hero" className="w-full gap-2">
                     <User className="h-4 w-4" />
-                    Patient Login
+                    Login as Patient
                   </Button>
                 </Link>
               </div>
