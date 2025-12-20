@@ -46,13 +46,18 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="font-semibold text-foreground">Quick Links</h4>
             <ul className="space-y-2">
-              {["Home", "Features", "Technology", "About Us", "Contact"].map((link) => (
-                <li key={link}>
+              {[
+                { label: "Home", href: "/" },
+                { label: "Features", href: "/features" },
+                { label: "Technology", href: "/technology" },
+                { label: "Contact", href: "/contact" },
+              ].map((link) => (
+                <li key={link.label}>
                   <a
-                    href="#"
+                    href={link.href}
                     className="text-muted-foreground hover:text-primary transition-colors text-sm"
                   >
-                    {link}
+                    {link.label}
                   </a>
                 </li>
               ))}
@@ -65,15 +70,19 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4 text-primary" />
-                <span>+1 (555) 123-4567</span>
+                <span>+91 6302614346</span>
+              </li>
+              <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Phone className="h-4 w-4 text-primary" />
+                <span>+91 80744 03635</span>
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4 text-primary" />
-                <span>emergency@healthpulse.io</span>
+                <span>emergencypulsemonitoring@gmail.com</span>
               </li>
               <li className="flex items-start gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <span>123 Medical Center Drive, Healthcare City, HC 12345</span>
+                <span>GGH, Ayodyanagar, Kakinada – 533001</span>
               </li>
             </ul>
           </div>
@@ -103,13 +112,13 @@ const Footer = () => {
             © 2024 HealthPulse. All rights reserved. IoT Healthcare Solutions.
           </p>
           <div className="flex gap-6">
-            <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <a href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Privacy Policy
             </a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <a href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Terms of Service
             </a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <a href="/hipaa" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               HIPAA Compliance
             </a>
           </div>
