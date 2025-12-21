@@ -32,12 +32,6 @@ const Footer = () => {
   const quickLinks = [
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
-    { label: "Doctor Login", href: "/auth/doctor" },
-    { label: "Patient Login", href: "/auth/patient" },
-    { label: "Dashboards", href: "/dashboard/doctor" },
-    { label: "Terms of Service", href: "/terms" },
-    { label: "Privacy Policy", href: "/privacy" },
-    { label: "HIPAA Compliance", href: "/hipaa" },
   ];
 
   return (

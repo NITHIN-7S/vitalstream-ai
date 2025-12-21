@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import ECGWave from "@/components/animations/ECGWave";
 import FloatingParticles from "@/components/animations/FloatingParticles";
 
+
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">

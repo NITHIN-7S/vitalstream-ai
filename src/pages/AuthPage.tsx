@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Mail, Lock, User, Stethoscope, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Activity, Mail, Lock, User, Stethoscope, Eye, EyeOff, ArrowLeft, MapPin, Loader2 } from "lucide-react";
 import ECGWave from "@/components/animations/ECGWave";
 import FloatingParticles from "@/components/animations/FloatingParticles";
 import { useToast } from "@/hooks/use-toast";
@@ -16,9 +16,53 @@ const AuthPage = () => {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [signupForm, setSignupForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [signupForm, setSignupForm] = useState({ name: "", email: "", password: "", confirmPassword: "", location: "" });
+
+  const getLocation = () => {
+    setIsGettingLocation(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          try {
+            // Use reverse geocoding to get address
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+            );
+            const data = await response.json();
+            const address = data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+            setSignupForm(prev => ({ ...prev, location: address }));
+            toast({
+              title: "Location detected",
+              description: "Your location has been added to your profile.",
+            });
+          } catch {
+            setSignupForm(prev => ({ ...prev, location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` }));
+          }
+          setIsGettingLocation(false);
+        },
+        (error) => {
+          console.error("Location error:", error);
+          toast({
+            title: "Location access denied",
+            description: "Please enter your location manually.",
+            variant: "destructive",
+          });
+          setIsGettingLocation(false);
+        }
+      );
+    } else {
+      toast({
+        title: "Geolocation not supported",
+        description: "Please enter your location manually.",
+        variant: "destructive",
+      });
+      setIsGettingLocation(false);
+    }
+  };
 
   const isDoctor = role === "doctor";
 
@@ -282,6 +326,36 @@ const AuthPage = () => {
                         onChange={(e) => setSignupForm({ ...signupForm, confirmPassword: e.target.value })}
                         required
                       />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-location">Location</Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-location"
+                        type="text"
+                        placeholder="Your location"
+                        className="pl-10 pr-24"
+                        value={signupForm.location}
+                        onChange={(e) => setSignupForm({ ...signupForm, location: e.target.value })}
+                      />
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={getLocation}
+                        disabled={isGettingLocation}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-colors flex items-center gap-1"
+                      >
+                        {isGettingLocation ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <MapPin className="h-3 w-3" />
+                        )}
+                        Detect
+                      </motion.button>
                     </div>
                   </div>
 

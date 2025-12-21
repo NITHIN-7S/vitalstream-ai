@@ -12,6 +12,7 @@ import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import HIPAAPage from "./pages/HIPAAPage";
 import NotFound from "./pages/NotFound";
+import HealthcareChatbot from "./components/chatbot/HealthcareChatbot";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/hipaa" element={<HIPAAPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <HealthcareChatbot />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
