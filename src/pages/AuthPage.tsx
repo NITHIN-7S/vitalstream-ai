@@ -363,13 +363,13 @@ const AuthPage = () => {
                     <input type="checkbox" className="rounded border-input mt-1" required />
                     <span className="text-muted-foreground">
                       I agree to the{" "}
-                      <a href="#" className="text-primary hover:underline">
+                      <Link to="/terms" className="text-primary hover:underline">
                         Terms of Service
-                      </a>{" "}
+                      </Link>{" "}
                       and{" "}
-                      <a href="#" className="text-primary hover:underline">
+                      <Link to="/privacy" className="text-primary hover:underline">
                         Privacy Policy
-                      </a>
+                      </Link>
                     </span>
                   </div>
 
