@@ -13,6 +13,7 @@ import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import HIPAAPage from "./pages/HIPAAPage";
 import NotFound from "./pages/NotFound";
+import DoctorSettings from "./pages/DoctorSettings";
 import HealthcareChatbot from "./components/chatbot/HealthcareChatbot";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/about" element={<AboutPage />} />
           <Route path="/auth/:role" element={<AuthPage />} />
           <Route path="/dashboard/doctor" element={<DoctorDashboard />} />
+          <Route path="/dashboard/doctor/settings" element={<DoctorSettings />} />
           <Route path="/dashboard/patient" element={<PatientDashboard />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
