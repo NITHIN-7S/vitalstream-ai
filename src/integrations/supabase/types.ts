@@ -14,7 +14,190 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      doctor_profiles: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          full_name: string | null
+          id: string
+          license_number: string | null
+          phone: string | null
+          profession: string | null
+          specialization: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          full_name?: string | null
+          id?: string
+          license_number?: string | null
+          phone?: string | null
+          profession?: string | null
+          specialization?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          full_name?: string | null
+          id?: string
+          license_number?: string | null
+          phone?: string | null
+          profession?: string | null
+          specialization?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      patient_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          alert_type: string
+          created_at: string | null
+          doctor_id: string | null
+          id: string
+          is_acknowledged: boolean | null
+          message: string
+          patient_id: string
+          priority: Database["public"]["Enums"]["alert_priority"] | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          alert_type: string
+          created_at?: string | null
+          doctor_id?: string | null
+          id?: string
+          is_acknowledged?: boolean | null
+          message: string
+          patient_id: string
+          priority?: Database["public"]["Enums"]["alert_priority"] | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          alert_type?: string
+          created_at?: string | null
+          doctor_id?: string | null
+          id?: string
+          is_acknowledged?: boolean | null
+          message?: string
+          patient_id?: string
+          priority?: Database["public"]["Enums"]["alert_priority"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_alerts_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_vitals: {
+        Row: {
+          blood_pressure_diastolic: number | null
+          blood_pressure_systolic: number | null
+          glucose_level: number | null
+          heart_rate: number | null
+          id: string
+          oxygen_level: number | null
+          patient_id: string
+          recorded_at: string | null
+          respiratory_rate: number | null
+          temperature: number | null
+        }
+        Insert: {
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          glucose_level?: number | null
+          heart_rate?: number | null
+          id?: string
+          oxygen_level?: number | null
+          patient_id: string
+          recorded_at?: string | null
+          respiratory_rate?: number | null
+          temperature?: number | null
+        }
+        Update: {
+          blood_pressure_diastolic?: number | null
+          blood_pressure_systolic?: number | null
+          glucose_level?: number | null
+          heart_rate?: number | null
+          id?: string
+          oxygen_level?: number | null
+          patient_id?: string
+          recorded_at?: string | null
+          respiratory_rate?: number | null
+          temperature?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_vitals_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patients: {
+        Row: {
+          admission_date: string | null
+          age: number
+          bed_number: string | null
+          created_at: string | null
+          diagnosis: string | null
+          doctor_id: string | null
+          emergency_contact: string | null
+          emergency_phone: string | null
+          gender: string | null
+          id: string
+          is_icu: boolean | null
+          name: string
+          room: string
+          status: Database["public"]["Enums"]["patient_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          admission_date?: string | null
+          age: number
+          bed_number?: string | null
+          created_at?: string | null
+          diagnosis?: string | null
+          doctor_id?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          gender?: string | null
+          id?: string
+          is_icu?: boolean | null
+          name: string
+          room: string
+          status?: Database["public"]["Enums"]["patient_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          admission_date?: string | null
+          age?: number
+          bed_number?: string | null
+          created_at?: string | null
+          diagnosis?: string | null
+          doctor_id?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
+          gender?: string | null
+          id?: string
+          is_icu?: boolean | null
+          name?: string
+          room?: string
+          status?: Database["public"]["Enums"]["patient_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +206,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      alert_priority: "low" | "moderate" | "high" | "critical"
+      patient_status: "normal" | "warning" | "critical"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +334,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      alert_priority: ["low", "moderate", "high", "critical"],
+      patient_status: ["normal", "warning", "critical"],
+    },
   },
 } as const
