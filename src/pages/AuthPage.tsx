@@ -21,6 +21,10 @@ const AuthPage = () => {
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [signupForm, setSignupForm] = useState({ name: "", email: "", password: "", confirmPassword: "", location: "" });
 
+  // Default to doctor if no role specified, or redirect to role selection
+  const currentRole = role || "doctor";
+  const isDoctor = currentRole === "doctor";
+
   const getLocation = () => {
     setIsGettingLocation(true);
     if (navigator.geolocation) {
@@ -63,8 +67,6 @@ const AuthPage = () => {
       setIsGettingLocation(false);
     }
   };
-
-  const isDoctor = role === "doctor";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
