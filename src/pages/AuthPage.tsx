@@ -9,7 +9,7 @@ import { Activity, Mail, Lock, User, Stethoscope, Eye, EyeOff, ArrowLeft, MapPin
 import ECGWave from "@/components/animations/ECGWave";
 import FloatingParticles from "@/components/animations/FloatingParticles";
 import { useToast } from "@/hooks/use-toast";
-
+import { supabase } from "@/integrations/supabase/client";
 const AuthPage = () => {
   const { role } = useParams<{ role: "doctor" | "patient" }>();
   const navigate = useNavigate();
@@ -21,9 +21,28 @@ const AuthPage = () => {
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [signupForm, setSignupForm] = useState({ name: "", email: "", password: "", confirmPassword: "", location: "" });
 
-  // Default to doctor if no role specified, or redirect to role selection
+  // Default to doctor if no role specified
   const currentRole = role || "doctor";
   const isDoctor = currentRole === "doctor";
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate(isDoctor ? "/dashboard/doctor" : "/dashboard/patient");
+      }
+    };
+    checkUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate(isDoctor ? "/dashboard/doctor" : "/dashboard/patient");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, isDoctor]);
 
   const getLocation = () => {
     setIsGettingLocation(true);
@@ -72,15 +91,35 @@ const AuthPage = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginForm.email,
+        password: loginForm.password,
+      });
+
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
         title: "Welcome back!",
         description: `Logged in as ${isDoctor ? "Doctor" : "Patient"}`,
       });
       navigate(isDoctor ? "/dashboard/doctor" : "/dashboard/patient");
-    }, 1500);
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -95,17 +134,61 @@ const AuthPage = () => {
       return;
     }
 
+    if (signupForm.password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate signup
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: signupForm.email,
+        password: signupForm.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            full_name: signupForm.name,
+            role: currentRole,
+          }
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Signup failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If doctor, create doctor profile
+      if (isDoctor && data.user) {
+        await supabase.from("doctor_profiles").insert({
+          user_id: data.user.id,
+          full_name: signupForm.name,
+        });
+      }
+
       toast({
         title: "Account created!",
-        description: "Welcome to HealthPulse. Please verify your email.",
+        description: "Welcome to HealthPulse.",
       });
       navigate(isDoctor ? "/dashboard/doctor" : "/dashboard/patient");
-    }, 1500);
+    } catch (error: any) {
+      toast({
+        title: "Signup failed",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
