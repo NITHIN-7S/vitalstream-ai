@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Mail, Lock, User, Stethoscope, Eye, EyeOff, ArrowLeft, MapPin, Loader2 } from "lucide-react";
+import { Activity, Mail, Lock, User, Stethoscope, Eye, EyeOff, ArrowLeft, MapPin, Loader2, ClipboardList } from "lucide-react";
 import ECGWave from "@/components/animations/ECGWave";
 import FloatingParticles from "@/components/animations/FloatingParticles";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import ForgotPasswordDialog from "@/components/auth/ForgotPasswordDialog";
 const AuthPage = () => {
-  const { role } = useParams<{ role: "doctor" | "patient" }>();
+  const { role } = useParams<{ role: "doctor" | "patient" | "receptionist" }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
@@ -24,6 +25,8 @@ const AuthPage = () => {
   // Default to doctor if no role specified
   const currentRole = role || "doctor";
   const isDoctor = currentRole === "doctor";
+  const isReceptionist = currentRole === "receptionist";
+  const isPatient = currentRole === "patient";
 
   // Check if user is already logged in
   useEffect(() => {
@@ -261,9 +264,9 @@ const AuthPage = () => {
             className="glass rounded-2xl p-8 shadow-elevated"
           >
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className={`grid w-full mb-6 ${isPatient ? "grid-cols-1" : "grid-cols-2"}`}>
                 <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                {!isPatient && <TabsTrigger value="signup">Sign Up</TabsTrigger>}
               </TabsList>
 
               {/* Login Tab */}
@@ -313,9 +316,7 @@ const AuthPage = () => {
                       <input type="checkbox" className="rounded border-input" />
                       <span className="text-muted-foreground">Remember me</span>
                     </label>
-                    <a href="#" className="text-primary hover:underline">
-                      Forgot password?
-                    </a>
+                    <ForgotPasswordDialog />
                   </div>
 
                   <Button
