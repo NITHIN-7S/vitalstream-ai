@@ -9,6 +9,8 @@ import AboutPage from "./pages/AboutPage";
 import AuthPage from "./pages/AuthPage";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import PatientDashboard from "./pages/PatientDashboard";
+import ReceptionDashboard from "./pages/ReceptionDashboard";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import HIPAAPage from "./pages/HIPAAPage";
@@ -30,9 +32,11 @@ const App = () => (
           <Route path="/about" element={<AboutPage />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/auth/:role" element={<AuthPage />} />
+          <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
           <Route path="/dashboard/doctor" element={<DoctorDashboard />} />
           <Route path="/dashboard/doctor/settings" element={<DoctorSettings />} />
           <Route path="/dashboard/patient" element={<PatientDashboard />} />
+          <Route path="/dashboard/reception" element={<ReceptionDashboard />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/hipaa" element={<HIPAAPage />} />

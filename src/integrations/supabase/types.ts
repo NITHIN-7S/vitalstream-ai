@@ -152,15 +152,19 @@ export type Database = {
           created_at: string | null
           diagnosis: string | null
           doctor_id: string | null
+          email: string | null
           emergency_contact: string | null
           emergency_phone: string | null
           gender: string | null
           id: string
           is_icu: boolean | null
           name: string
+          password_given: boolean | null
+          registered_by: string | null
           room: string
           status: Database["public"]["Enums"]["patient_status"] | null
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           admission_date?: string | null
@@ -169,15 +173,19 @@ export type Database = {
           created_at?: string | null
           diagnosis?: string | null
           doctor_id?: string | null
+          email?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
           gender?: string | null
           id?: string
           is_icu?: boolean | null
           name: string
+          password_given?: boolean | null
+          registered_by?: string | null
           room: string
           status?: Database["public"]["Enums"]["patient_status"] | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           admission_date?: string | null
@@ -186,15 +194,52 @@ export type Database = {
           created_at?: string | null
           diagnosis?: string | null
           doctor_id?: string | null
+          email?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
           gender?: string | null
           id?: string
           is_icu?: boolean | null
           name?: string
+          password_given?: boolean | null
+          registered_by?: string | null
           room?: string
           status?: Database["public"]["Enums"]["patient_status"] | null
           updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      receptionist_profiles: {
+        Row: {
+          created_at: string
+          department: string | null
+          full_name: string
+          hospital_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          full_name: string
+          hospital_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          full_name?: string
+          hospital_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
