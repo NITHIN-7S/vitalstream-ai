@@ -28,24 +28,31 @@ const AuthPage = () => {
   const isReceptionist = currentRole === "receptionist";
   const isPatient = currentRole === "patient";
 
+  // Get redirect path based on role
+  const getRedirectPath = () => {
+    if (isDoctor) return "/dashboard/doctor";
+    if (isReceptionist) return "/dashboard/reception";
+    return "/dashboard/patient";
+  };
+
   // Check if user is already logged in
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate(isDoctor ? "/dashboard/doctor" : "/dashboard/patient");
+        navigate(getRedirectPath());
       }
     };
     checkUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        navigate(isDoctor ? "/dashboard/doctor" : "/dashboard/patient");
+        navigate(getRedirectPath());
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, isDoctor]);
+  }, [navigate, isDoctor, isReceptionist]);
 
   const getLocation = () => {
     setIsGettingLocation(true);
@@ -109,11 +116,12 @@ const AuthPage = () => {
         return;
       }
 
+      const roleLabel = isDoctor ? "Doctor" : isReceptionist ? "Receptionist" : "Patient";
       toast({
         title: "Welcome back!",
-        description: `Logged in as ${isDoctor ? "Doctor" : "Patient"}`,
+        description: `Logged in as ${roleLabel}`,
       });
-      navigate(isDoctor ? "/dashboard/doctor" : "/dashboard/patient");
+      navigate(getRedirectPath());
     } catch (error: any) {
       toast({
         title: "Login failed",
@@ -178,11 +186,19 @@ const AuthPage = () => {
         });
       }
 
+      // If receptionist, create receptionist profile
+      if (isReceptionist && data.user) {
+        await supabase.from("receptionist_profiles").insert({
+          user_id: data.user.id,
+          full_name: signupForm.name,
+        });
+      }
+
       toast({
         title: "Account created!",
         description: "Welcome to HealthPulse.",
       });
-      navigate(isDoctor ? "/dashboard/doctor" : "/dashboard/patient");
+      navigate(getRedirectPath());
     } catch (error: any) {
       toast({
         title: "Signup failed",
@@ -236,22 +252,28 @@ const AuthPage = () => {
             </Link>
             
             <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${
-              isDoctor ? "bg-primary/10 text-primary" : "bg-success/10 text-success"
+              isDoctor ? "bg-primary/10 text-primary" : isReceptionist ? "bg-accent/20 text-accent-foreground" : "bg-success/10 text-success"
             } mb-4`}>
               {isDoctor ? (
                 <Stethoscope className="h-4 w-4" />
+              ) : isReceptionist ? (
+                <ClipboardList className="h-4 w-4" />
               ) : (
                 <User className="h-4 w-4" />
               )}
-              <span className="text-sm font-medium">{isDoctor ? "Doctor Portal" : "Patient Portal"}</span>
+              <span className="text-sm font-medium">
+                {isDoctor ? "Doctor Portal" : isReceptionist ? "Reception Portal" : "Patient Portal"}
+              </span>
             </div>
 
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              {isDoctor ? "Doctor Access" : "Patient Access"}
+              {isDoctor ? "Doctor Access" : isReceptionist ? "Reception Access" : "Patient Access"}
             </h1>
             <p className="text-muted-foreground">
               {isDoctor
                 ? "Monitor your patients in real-time"
+                : isReceptionist
+                ? "Register patients and manage admissions"
                 : "View your health data and connect with doctors"}
             </p>
           </motion.div>
@@ -266,7 +288,7 @@ const AuthPage = () => {
             <Tabs defaultValue="login" className="w-full">
               <TabsList className={`grid w-full mb-6 ${isPatient ? "grid-cols-1" : "grid-cols-2"}`}>
                 <TabsTrigger value="login">Login</TabsTrigger>
-                {!isPatient && <TabsTrigger value="signup">Sign Up</TabsTrigger>}
+                {(isDoctor || isReceptionist) && <TabsTrigger value="signup">Sign Up</TabsTrigger>}
               </TabsList>
 
               {/* Login Tab */}
@@ -334,7 +356,7 @@ const AuthPage = () => {
                     ) : (
                       <>
                         Sign In
-                        {isDoctor ? <Stethoscope className="h-4 w-4 ml-2" /> : <User className="h-4 w-4 ml-2" />}
+                        {isDoctor ? <Stethoscope className="h-4 w-4 ml-2" /> : isReceptionist ? <ClipboardList className="h-4 w-4 ml-2" /> : <User className="h-4 w-4 ml-2" />}
                       </>
                     )}
                   </Button>
