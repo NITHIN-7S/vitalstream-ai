@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Activity, Menu, X, User, Stethoscope } from "lucide-react";
+import { Activity, Menu, X, User, Stethoscope, ClipboardList } from "lucide-react";
 import ThemeToggle from "@/components/ui/theme-toggle";
 
 const Navbar = () => {
@@ -69,16 +69,22 @@ const Navbar = () => {
           {/* Auth Buttons & Theme Toggle */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
+            <Link to="/auth/receptionist">
+              <Button variant="outline" size="sm" className="gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Reception
+              </Button>
+            </Link>
             <Link to="/auth/doctor">
               <Button variant="ghost" size="sm" className="gap-2">
                 <Stethoscope className="h-4 w-4" />
-                Get Started as Doctor
+                Doctor
               </Button>
             </Link>
             <Link to="/auth/patient">
               <Button variant="hero" size="sm" className="gap-2">
                 <User className="h-4 w-4" />
-                Login as Patient
+                Patient
               </Button>
             </Link>
           </div>
@@ -119,16 +125,22 @@ const Navbar = () => {
                 </Link>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
+                <Link to="/auth/receptionist" onClick={() => setIsOpen(false)}>
+                  <Button variant="outline" className="w-full gap-2">
+                    <ClipboardList className="h-4 w-4" />
+                    Reception Portal
+                  </Button>
+                </Link>
                 <Link to="/auth/doctor" onClick={() => setIsOpen(false)}>
                   <Button variant="outline" className="w-full gap-2">
                     <Stethoscope className="h-4 w-4" />
-                    Get Started as Doctor
+                    Doctor Portal
                   </Button>
                 </Link>
                 <Link to="/auth/patient" onClick={() => setIsOpen(false)}>
                   <Button variant="hero" className="w-full gap-2">
                     <User className="h-4 w-4" />
-                    Login as Patient
+                    Patient Portal
                   </Button>
                 </Link>
               </div>
