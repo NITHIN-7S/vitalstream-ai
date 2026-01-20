@@ -69,16 +69,16 @@ const Navbar = () => {
           {/* Auth Buttons & Theme Toggle */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            <Link to="/auth/receptionist">
-              <Button variant="outline" size="sm" className="gap-2">
-                <ClipboardList className="h-4 w-4" />
-                Reception
-              </Button>
-            </Link>
             <Link to="/auth/doctor">
               <Button variant="ghost" size="sm" className="gap-2">
                 <Stethoscope className="h-4 w-4" />
                 Doctor
+              </Button>
+            </Link>
+            <Link to="/auth/receptionist">
+              <Button variant="outline" size="sm" className="gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Reception
               </Button>
             </Link>
             <Link to="/auth/patient">
@@ -125,16 +125,16 @@ const Navbar = () => {
                 </Link>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <Link to="/auth/receptionist" onClick={() => setIsOpen(false)}>
-                  <Button variant="outline" className="w-full gap-2">
-                    <ClipboardList className="h-4 w-4" />
-                    Reception Portal
-                  </Button>
-                </Link>
                 <Link to="/auth/doctor" onClick={() => setIsOpen(false)}>
                   <Button variant="outline" className="w-full gap-2">
                     <Stethoscope className="h-4 w-4" />
                     Doctor Portal
+                  </Button>
+                </Link>
+                <Link to="/auth/receptionist" onClick={() => setIsOpen(false)}>
+                  <Button variant="outline" className="w-full gap-2">
+                    <ClipboardList className="h-4 w-4" />
+                    Reception Portal
                   </Button>
                 </Link>
                 <Link to="/auth/patient" onClick={() => setIsOpen(false)}>

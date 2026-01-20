@@ -1,23 +1,41 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Activity, Bell, Settings, LogOut, Heart, Thermometer, Wind, User, Phone, Calendar, FileText, ChevronRight, MessageCircle, MapPin } from "lucide-react";
+import { Activity, Bell, Settings, LogOut, Heart, Thermometer, Wind, User, Phone, Calendar, FileText, ChevronRight, MessageCircle, MapPin, Loader2 } from "lucide-react";
 import VitalCard from "@/components/cards/VitalCard";
 import LiveChart from "@/components/dashboard/LiveChart";
 import ECGWave from "@/components/animations/ECGWave";
 import ContactForm from "@/components/dashboard/ContactForm";
 import NearbyHospitalsMap from "@/components/dashboard/NearbyHospitalsMap";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface PatientData {
+  name: string;
+  age: number;
+  room: string;
+  admissionDate: string;
+  doctor: string | null;
+  doctorSpecialty: string | null;
+  doctorPhone: string | null;
+  condition: string | null;
+}
 
 const PatientDashboard = () => {
-  const patientData = {
-    name: "John Anderson",
-    age: 67,
-    room: "ICU-101",
-    admissionDate: "Dec 15, 2024",
-    doctor: "Dr. Rachel Smith",
-    doctorSpecialty: "Cardiologist",
-    condition: "Post-Cardiac Surgery Recovery",
-  };
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [patientData, setPatientData] = useState<PatientData>({
+    name: "Loading...",
+    age: 0,
+    room: "",
+    admissionDate: "",
+    doctor: null,
+    doctorSpecialty: null,
+    doctorPhone: null,
+    condition: null,
+  });
 
   const vitals = {
     heartRate: { value: 78, status: "normal" as const, trend: "stable" as const },
@@ -37,6 +55,94 @@ const PatientDashboard = () => {
     { name: "Metoprolol", dosage: "50mg", frequency: "Twice daily", nextDose: "8:00 AM" },
     { name: "Lisinopril", dosage: "10mg", frequency: "Once daily", nextDose: "8:00 AM" },
   ];
+
+  useEffect(() => {
+    fetchPatientData();
+  }, []);
+
+  const fetchPatientData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/auth/patient");
+        return;
+      }
+
+      // Fetch patient data
+      const { data: patient, error: patientError } = await supabase
+        .from("patients")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (patientError || !patient) {
+        toast({
+          title: "Error",
+          description: "Could not load patient data",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Fetch doctor info if assigned
+      let doctorInfo = { name: null as string | null, specialty: null as string | null, phone: null as string | null };
+      if (patient.doctor_id) {
+        const { data: doctor } = await supabase
+          .from("doctor_profiles")
+          .select("full_name, specialization, phone")
+          .eq("user_id", patient.doctor_id)
+          .single();
+        
+        if (doctor) {
+          doctorInfo = {
+            name: doctor.full_name,
+            specialty: doctor.specialization,
+            phone: doctor.phone,
+          };
+        }
+      }
+
+      setPatientData({
+        name: patient.name,
+        age: patient.age,
+        room: patient.room,
+        admissionDate: patient.admission_date ? new Date(patient.admission_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A",
+        doctor: doctorInfo.name ? `Dr. ${doctorInfo.name}` : null,
+        doctorSpecialty: doctorInfo.specialty,
+        doctorPhone: doctorInfo.phone,
+        condition: patient.diagnosis,
+      });
+    } catch (error) {
+      console.error("Error fetching patient data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
+  const handleCallDoctor = () => {
+    if (patientData.doctorPhone) {
+      window.location.href = `tel:${patientData.doctorPhone}`;
+    } else {
+      toast({
+        title: "No phone number",
+        description: "Doctor's phone number is not available",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,12 +197,10 @@ const PatientDashboard = () => {
               <p className="text-xs text-muted-foreground">Room {patientData.room}</p>
             </div>
           </div>
-          <Link to="/">
-            <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground">
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
-          </Link>
+          <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground" onClick={handleLogout}>
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </aside>
 
@@ -115,7 +219,7 @@ const PatientDashboard = () => {
               <Button variant="glass" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
               </Button>
-              <Button variant="hero" className="gap-2">
+              <Button variant="hero" className="gap-2" onClick={handleCallDoctor} disabled={!patientData.doctorPhone}>
                 <Phone className="h-4 w-4" />
                 Contact Doctor
               </Button>
@@ -137,7 +241,7 @@ const PatientDashboard = () => {
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-foreground">{patientData.name}</h2>
-                  <p className="text-muted-foreground">{patientData.condition}</p>
+                  <p className="text-muted-foreground">{patientData.condition || "Under Observation"}</p>
                   <div className="flex items-center gap-4 mt-2 text-sm">
                     <span className="text-muted-foreground">Age: {patientData.age}</span>
                     <span className="text-muted-foreground">Room: {patientData.room}</span>
@@ -238,25 +342,40 @@ const PatientDashboard = () => {
               className="glass rounded-xl p-6 shadow-card"
             >
               <h3 className="font-semibold text-foreground mb-4">Your Doctor</h3>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
-                  <span className="text-lg font-bold text-primary">RS</span>
+              {patientData.doctor ? (
+                <>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
+                      <span className="text-lg font-bold text-primary">
+                        {patientData.doctor.replace('Dr. ', '').split(' ').map(n => n[0]).join('')}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">{patientData.doctor}</p>
+                      <p className="text-sm text-muted-foreground">{patientData.doctorSpecialty || "General Physician"}</p>
+                      {patientData.doctorPhone && (
+                        <p className="text-xs text-primary mt-1">{patientData.doctorPhone}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <Button variant="hero" className="w-full gap-2" onClick={handleCallDoctor}>
+                      <Phone className="h-4 w-4" />
+                      Call Now
+                    </Button>
+                    <Button variant="outline" className="w-full gap-2">
+                      <MessageCircle className="h-4 w-4" />
+                      Send Message
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No doctor assigned yet</p>
+                  <p className="text-sm">Please contact reception</p>
                 </div>
-                <div>
-                  <p className="font-semibold text-foreground">{patientData.doctor}</p>
-                  <p className="text-sm text-muted-foreground">{patientData.doctorSpecialty}</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <Button variant="hero" className="w-full gap-2">
-                  <Phone className="h-4 w-4" />
-                  Call Now
-                </Button>
-                <Button variant="outline" className="w-full gap-2">
-                  <MessageCircle className="h-4 w-4" />
-                  Send Message
-                </Button>
-              </div>
+              )}
             </motion.div>
           </div>
 

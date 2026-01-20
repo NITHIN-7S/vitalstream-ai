@@ -20,7 +20,7 @@ const AuthPage = () => {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [signupForm, setSignupForm] = useState({ name: "", email: "", password: "", confirmPassword: "", location: "" });
+  const [signupForm, setSignupForm] = useState({ name: "", email: "", password: "", confirmPassword: "", location: "", specialization: "" });
 
   // Default to doctor if no role specified
   const currentRole = role || "doctor";
@@ -183,6 +183,7 @@ const AuthPage = () => {
         await supabase.from("doctor_profiles").insert({
           user_id: data.user.id,
           full_name: signupForm.name,
+          specialization: signupForm.specialization,
         });
       }
 
@@ -436,6 +437,24 @@ const AuthPage = () => {
                       />
                     </div>
                   </div>
+
+                  {isDoctor && (
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-specialization">Specialization</Label>
+                      <div className="relative">
+                        <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-specialization"
+                          type="text"
+                          placeholder="e.g., Cardiologist, Neurologist"
+                          className="pl-10"
+                          value={signupForm.specialization}
+                          onChange={(e) => setSignupForm({ ...signupForm, specialization: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="signup-location">Location</Label>
