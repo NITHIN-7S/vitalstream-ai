@@ -51,7 +51,7 @@ const ReceptionDashboard = () => {
   const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
   const [credentials, setCredentials] = useState<PatientCredentials | null>(null);
   const [registeredPatients, setRegisteredPatients] = useState<RegisteredPatient[]>([]);
-  const [doctors, setDoctors] = useState<{id: string, full_name: string}[]>([]);
+  const [doctors, setDoctors] = useState<{id: string, full_name: string, specialization: string | null}[]>([]);
   const [showPassword, setShowPassword] = useState(false);
 
   const [patientForm, setPatientForm] = useState({
@@ -83,10 +83,10 @@ const ReceptionDashboard = () => {
   const fetchDoctors = async () => {
     const { data, error } = await supabase
       .from("doctor_profiles")
-      .select("user_id, full_name");
+      .select("user_id, full_name, specialization, phone");
     
     if (data) {
-      setDoctors(data.map(d => ({ id: d.user_id, full_name: d.full_name || "Unknown" })));
+      setDoctors(data.map(d => ({ id: d.user_id, full_name: d.full_name || "Unknown", specialization: d.specialization })));
     }
   };
 
@@ -314,7 +314,12 @@ const ReceptionDashboard = () => {
                         <SelectContent className="bg-background border">
                           {doctors.map((doctor) => (
                             <SelectItem key={doctor.id} value={doctor.id}>
-                              {doctor.full_name}
+                              <div className="flex flex-col">
+                                <span>{doctor.full_name}</span>
+                                {doctor.specialization && (
+                                  <span className="text-xs text-muted-foreground">{doctor.specialization}</span>
+                                )}
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
