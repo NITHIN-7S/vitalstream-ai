@@ -163,6 +163,7 @@ export type Database = {
           registered_by: string | null
           room: string
           status: Database["public"]["Enums"]["patient_status"] | null
+          stored_password: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -184,6 +185,7 @@ export type Database = {
           registered_by?: string | null
           room: string
           status?: Database["public"]["Enums"]["patient_status"] | null
+          stored_password?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -205,6 +207,7 @@ export type Database = {
           registered_by?: string | null
           room?: string
           status?: Database["public"]["Enums"]["patient_status"] | null
+          stored_password?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -243,15 +246,47 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       alert_priority: "low" | "moderate" | "high" | "critical"
+      app_role: "doctor" | "receptionist" | "patient"
       patient_status: "normal" | "warning" | "critical"
     }
     CompositeTypes: {
@@ -381,6 +416,7 @@ export const Constants = {
   public: {
     Enums: {
       alert_priority: ["low", "moderate", "high", "critical"],
+      app_role: ["doctor", "receptionist", "patient"],
       patient_status: ["normal", "warning", "critical"],
     },
   },

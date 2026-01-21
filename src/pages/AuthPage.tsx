@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Mail, Lock, User, Stethoscope, Eye, EyeOff, ArrowLeft, MapPin, Loader2, ClipboardList } from "lucide-react";
+import { Activity, Mail, Lock, User, Stethoscope, Eye, EyeOff, ArrowLeft, MapPin, Loader2, ClipboardList, Phone } from "lucide-react";
 import ECGWave from "@/components/animations/ECGWave";
 import FloatingParticles from "@/components/animations/FloatingParticles";
 import { useToast } from "@/hooks/use-toast";
@@ -20,7 +20,7 @@ const AuthPage = () => {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [signupForm, setSignupForm] = useState({ name: "", email: "", password: "", confirmPassword: "", location: "", specialization: "" });
+  const [signupForm, setSignupForm] = useState({ name: "", email: "", password: "", confirmPassword: "", location: "", specialization: "", phone: "" });
 
   // Default to doctor if no role specified
   const currentRole = role || "doctor";
@@ -116,6 +116,21 @@ const AuthPage = () => {
         return;
       }
 
+      // Verify user role matches the portal they're trying to access
+      const { data: roleData } = await supabase.rpc('get_user_role', { _user_id: data.user.id });
+      
+      const expectedRole = currentRole as 'doctor' | 'receptionist' | 'patient';
+      
+      if (roleData && roleData !== expectedRole) {
+        await supabase.auth.signOut();
+        toast({
+          title: "Access Denied",
+          description: `You are registered as a ${roleData}. Please use the ${roleData} portal to login.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const roleLabel = isDoctor ? "Doctor" : isReceptionist ? "Receptionist" : "Patient";
       toast({
         title: "Welcome back!",
@@ -178,12 +193,21 @@ const AuthPage = () => {
         return;
       }
 
+      // Create user role entry for strict role-based access
+      if (data.user) {
+        await supabase.from("user_roles").insert({
+          user_id: data.user.id,
+          role: currentRole as 'doctor' | 'receptionist' | 'patient',
+        });
+      }
+
       // If doctor, create doctor profile
       if (isDoctor && data.user) {
         await supabase.from("doctor_profiles").insert({
           user_id: data.user.id,
           full_name: signupForm.name,
           specialization: signupForm.specialization,
+          phone: signupForm.phone,
         });
       }
 
@@ -439,21 +463,38 @@ const AuthPage = () => {
                   </div>
 
                   {isDoctor && (
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-specialization">Specialization</Label>
-                      <div className="relative">
-                        <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signup-specialization"
-                          type="text"
-                          placeholder="e.g., Cardiologist, Neurologist"
-                          className="pl-10"
-                          value={signupForm.specialization}
-                          onChange={(e) => setSignupForm({ ...signupForm, specialization: e.target.value })}
-                          required
-                        />
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-specialization">Specialization *</Label>
+                        <div className="relative">
+                          <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="signup-specialization"
+                            type="text"
+                            placeholder="e.g., Cardiologist, Neurologist"
+                            className="pl-10"
+                            value={signupForm.specialization}
+                            onChange={(e) => setSignupForm({ ...signupForm, specialization: e.target.value })}
+                            required
+                          />
+                        </div>
                       </div>
-                    </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-phone">Phone Number *</Label>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="signup-phone"
+                            type="tel"
+                            placeholder="e.g., +91 9876543210"
+                            className="pl-10"
+                            value={signupForm.phone}
+                            onChange={(e) => setSignupForm({ ...signupForm, phone: e.target.value })}
+                            required
+                          />
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   <div className="space-y-2">
