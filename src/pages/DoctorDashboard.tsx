@@ -26,6 +26,17 @@ interface Patient {
   emergency_contact?: string;
   emergency_phone?: string;
   admission_date?: string;
+  email?: string;
+}
+
+interface MyPatient {
+  id: string;
+  name: string;
+  age: number;
+  room: string;
+  diagnosis?: string;
+  email?: string;
+  admission_date?: string;
 }
 
 interface PatientVitals {
@@ -45,10 +56,11 @@ const DoctorDashboard = () => {
   const [selectedPatientVitals, setSelectedPatientVitals] = useState<PatientVitals | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [myPatients, setMyPatients] = useState<MyPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [doctorName, setDoctorName] = useState("Doctor");
-  const [activeTab, setActiveTab] = useState<"patients" | "alerts">("patients");
+  const [activeTab, setActiveTab] = useState<"patients" | "mypatients" | "alerts">("patients");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Check authentication
@@ -75,7 +87,7 @@ const DoctorDashboard = () => {
     checkAuth();
   }, [navigate]);
 
-  // Fetch patients
+  // Fetch ICU patients
   const fetchPatients = async () => {
     try {
       const { data, error } = await supabase
@@ -100,6 +112,24 @@ const DoctorDashboard = () => {
     }
   };
 
+  // Fetch all patients assigned to this doctor
+  const fetchMyPatients = async () => {
+    if (!userId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("patients")
+        .select("id, name, age, room, diagnosis, email, admission_date")
+        .eq("doctor_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setMyPatients(data || []);
+    } catch (error) {
+      console.error("Error fetching my patients:", error);
+    }
+  };
+
   useEffect(() => {
     fetchPatients();
 
@@ -115,6 +145,7 @@ const DoctorDashboard = () => {
         },
         () => {
           fetchPatients();
+          fetchMyPatients();
         }
       )
       .subscribe();
@@ -123,6 +154,12 @@ const DoctorDashboard = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  useEffect(() => {
+    if (userId) {
+      fetchMyPatients();
+    }
+  }, [userId]);
 
   // Check for critical patients and show alert
   useEffect(() => {
@@ -244,6 +281,18 @@ const DoctorDashboard = () => {
           >
             <Users className="h-5 w-5" />
             ICU Patients
+          </button>
+          <button
+            onClick={() => setActiveTab("mypatients")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === "mypatients" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <Users className="h-5 w-5" />
+            My Patients
+            <span className="ml-auto text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+              {myPatients.length}
+            </span>
           </button>
           <button
             onClick={() => setActiveTab("alerts")}
@@ -493,6 +542,64 @@ const DoctorDashboard = () => {
                 )}
               </motion.div>
             </>
+          ) : activeTab === "mypatients" ? (
+            /* My Patients Tab */
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <h2 className="text-xl font-semibold text-foreground mb-4">My Assigned Patients</h2>
+              {myPatients.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No patients assigned to you yet</p>
+                  <p className="text-sm">Patients will appear here when assigned by reception</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {myPatients.map((patient) => (
+                    <motion.div
+                      key={patient.id}
+                      whileHover={{ scale: 1.02, y: -4 }}
+                      className="glass rounded-xl p-6 shadow-card cursor-pointer"
+                    >
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                          <span className="text-lg font-bold text-primary">
+                            {patient.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">{patient.name}</p>
+                          <p className="text-sm text-muted-foreground">Age: {patient.age}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Room:</span>
+                          <span className="font-medium text-foreground">{patient.room}</span>
+                        </div>
+                        {patient.diagnosis && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Diagnosis:</span>
+                            <span className="font-medium text-foreground truncate max-w-[150px]">{patient.diagnosis}</span>
+                          </div>
+                        )}
+                        {patient.admission_date && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Admitted:</span>
+                            <span className="font-medium text-foreground">
+                              {new Date(patient.admission_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
           ) : (
             /* Alerts Tab */
             <motion.div

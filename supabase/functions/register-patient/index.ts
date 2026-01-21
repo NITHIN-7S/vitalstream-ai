@@ -59,7 +59,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Request from user:', user.id);
+    // Verify user is a receptionist
+    const { data: roleData } = await supabaseAdmin.rpc('get_user_role', { _user_id: user.id });
+    if (roleData !== 'receptionist') {
+      return new Response(
+        JSON.stringify({ error: 'Only receptionists can register patients' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Request from receptionist:', user.id);
 
     const body = await req.json();
     const { 
@@ -108,7 +117,19 @@ Deno.serve(async (req) => {
 
     console.log('User created:', authData.user?.id);
 
-    // Create patient record
+    // Create user role entry for patient
+    const { error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .insert({
+        user_id: authData.user?.id,
+        role: 'patient'
+      });
+
+    if (roleError) {
+      console.error('Error creating role:', roleError);
+    }
+
+    // Create patient record with stored password for receptionist access
     const { data: patientData, error: patientError } = await supabaseAdmin
       .from('patients')
       .insert({
@@ -126,7 +147,8 @@ Deno.serve(async (req) => {
         registered_by: user.id,
         password_given: false,
         status: 'normal',
-        is_icu: false
+        is_icu: false,
+        stored_password: password
       })
       .select()
       .single();
