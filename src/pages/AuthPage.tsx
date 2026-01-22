@@ -311,9 +311,9 @@ const AuthPage = () => {
             className="glass rounded-2xl p-8 shadow-elevated"
           >
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className={`grid w-full mb-6 ${isPatient ? "grid-cols-1" : "grid-cols-2"}`}>
+              <TabsList className={`grid w-full mb-6 ${isPatient || isReceptionist ? "grid-cols-1" : "grid-cols-2"}`}>
                 <TabsTrigger value="login">Login</TabsTrigger>
-                {(isDoctor || isReceptionist) && <TabsTrigger value="signup">Sign Up</TabsTrigger>}
+                {isDoctor && <TabsTrigger value="signup">Sign Up</TabsTrigger>}
               </TabsList>
 
               {/* Login Tab */}

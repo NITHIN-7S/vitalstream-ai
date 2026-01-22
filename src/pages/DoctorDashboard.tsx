@@ -37,6 +37,7 @@ interface MyPatient {
   diagnosis?: string;
   email?: string;
   admission_date?: string;
+  status: "normal" | "warning" | "critical";
 }
 
 interface PatientVitals {
@@ -119,12 +120,15 @@ const DoctorDashboard = () => {
     try {
       const { data, error } = await supabase
         .from("patients")
-        .select("id, name, age, room, diagnosis, email, admission_date")
+        .select("id, name, age, room, diagnosis, email, admission_date, status")
         .eq("doctor_id", userId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setMyPatients(data || []);
+      setMyPatients((data || []).map(p => ({
+        ...p,
+        status: (p.status as "normal" | "warning" | "critical") || "normal"
+      })));
     } catch (error) {
       console.error("Error fetching my patients:", error);
     }
@@ -558,45 +562,71 @@ const DoctorDashboard = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {myPatients.map((patient) => (
-                    <motion.div
-                      key={patient.id}
-                      whileHover={{ scale: 1.02, y: -4 }}
-                      className="glass rounded-xl p-6 shadow-card cursor-pointer"
-                    >
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                          <span className="text-lg font-bold text-primary">
-                            {patient.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  {myPatients.map((patient) => {
+                    const statusColors = {
+                      normal: "bg-success/20 text-success border-success/30",
+                      warning: "bg-warning/20 text-warning border-warning/30",
+                      critical: "bg-destructive/20 text-destructive border-destructive/30"
+                    };
+                    const statusLabels = {
+                      normal: "Stable",
+                      warning: "Warning",
+                      critical: "Critical"
+                    };
+                    return (
+                      <motion.div
+                        key={patient.id}
+                        whileHover={{ scale: 1.02, y: -4 }}
+                        className={`glass rounded-xl p-6 shadow-card cursor-pointer border ${
+                          patient.status === "critical" ? "border-destructive/50" : 
+                          patient.status === "warning" ? "border-warning/50" : "border-transparent"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                              patient.status === "critical" ? "bg-destructive/20" :
+                              patient.status === "warning" ? "bg-warning/20" : "bg-primary/20"
+                            }`}>
+                              <span className={`text-lg font-bold ${
+                                patient.status === "critical" ? "text-destructive" :
+                                patient.status === "warning" ? "text-warning" : "text-primary"
+                              }`}>
+                                {patient.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground">{patient.name}</p>
+                              <p className="text-sm text-muted-foreground">Age: {patient.age}</p>
+                            </div>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[patient.status]}`}>
+                            {statusLabels[patient.status]}
                           </span>
                         </div>
-                        <div>
-                          <p className="font-semibold text-foreground">{patient.name}</p>
-                          <p className="text-sm text-muted-foreground">Age: {patient.age}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Room:</span>
-                          <span className="font-medium text-foreground">{patient.room}</span>
-                        </div>
-                        {patient.diagnosis && (
+                        <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Diagnosis:</span>
-                            <span className="font-medium text-foreground truncate max-w-[150px]">{patient.diagnosis}</span>
+                            <span className="text-muted-foreground">Room:</span>
+                            <span className="font-medium text-foreground">{patient.room}</span>
                           </div>
-                        )}
-                        {patient.admission_date && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Admitted:</span>
-                            <span className="font-medium text-foreground">
-                              {new Date(patient.admission_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
+                          {patient.diagnosis && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Condition:</span>
+                              <span className="font-medium text-foreground truncate max-w-[150px]">{patient.diagnosis}</span>
+                            </div>
+                          )}
+                          {patient.admission_date && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Admitted:</span>
+                              <span className="font-medium text-foreground">
+                                {new Date(patient.admission_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </motion.div>
