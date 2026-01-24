@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Activity, Bell, Settings, LogOut, Heart, Thermometer, Wind, User, Phone, FileText, MapPin, Loader2, Lock, Eye, EyeOff, Upload, ChevronRight } from "lucide-react";
+import { Activity, Bell, Settings, LogOut, Heart, Thermometer, Wind, User, Phone, FileText, MapPin, Loader2, Lock, Eye, EyeOff, Upload, ChevronRight, Download, Trash2 } from "lucide-react";
 import VitalCard from "@/components/cards/VitalCard";
 import LiveChart from "@/components/dashboard/LiveChart";
 import ECGWave from "@/components/animations/ECGWave";
@@ -58,7 +58,8 @@ const PatientDashboard = () => {
   const [reportFile, setReportFile] = useState<File | null>(null);
   const [reportDescription, setReportDescription] = useState("");
   const [isUploadingReport, setIsUploadingReport] = useState(false);
-  const [reports, setReports] = useState<{ id: string; name: string; date: string; description: string }[]>([]);
+  const [reports, setReports] = useState<{ id: string; name: string; date: string; description: string; url: string }[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
 
   const vitals = {
     heartRate: { value: 78, status: "normal" as const, trend: "stable" as const },
@@ -75,7 +76,37 @@ const PatientDashboard = () => {
 
   useEffect(() => {
     fetchPatientData();
+    fetchReports();
   }, []);
+
+  const fetchReports = async () => {
+    setIsLoadingReports(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: files, error } = await supabase.storage
+        .from('medical-reports')
+        .list(user.id, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+
+      if (error) throw error;
+
+      if (files) {
+        const reportsData = files.map((file) => ({
+          id: file.id,
+          name: file.name,
+          date: new Date(file.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          description: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
+          url: `${user.id}/${file.name}`,
+        }));
+        setReports(reportsData);
+      }
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+    } finally {
+      setIsLoadingReports(false);
+    }
+  };
 
   const fetchPatientData = async () => {
     try {
@@ -223,23 +254,89 @@ const PatientDashboard = () => {
 
     setIsUploadingReport(true);
     
-    // Simulate upload - in real implementation, upload to Supabase Storage
-    setTimeout(() => {
-      const newReport = {
-        id: Date.now().toString(),
-        name: reportFile.name,
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        description: reportDescription || "Medical Report",
-      };
-      setReports([newReport, ...reports]);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Create unique filename with timestamp
+      const fileExt = reportFile.name.split('.').pop();
+      const fileName = `${Date.now()}_${reportDescription.replace(/\s+/g, '_') || 'report'}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('medical-reports')
+        .upload(filePath, reportFile);
+
+      if (uploadError) throw uploadError;
+
+      // Refresh reports list
+      await fetchReports();
+      
       setReportFile(null);
       setReportDescription("");
-      setIsUploadingReport(false);
       toast({
         title: "Report Uploaded",
         description: "Your medical report has been uploaded successfully",
       });
-    }, 1500);
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload report",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingReport(false);
+    }
+  };
+
+  const handleDeleteReport = async (reportUrl: string) => {
+    try {
+      const { error } = await supabase.storage
+        .from('medical-reports')
+        .remove([reportUrl]);
+
+      if (error) throw error;
+
+      await fetchReports();
+      toast({
+        title: "Report Deleted",
+        description: "Your report has been deleted successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete report",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadReport = async (reportUrl: string, fileName: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('medical-reports')
+        .download(reportUrl);
+
+      if (error) throw error;
+
+      // Create download link
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast({
+        title: "Download Failed",
+        description: error.message || "Failed to download report",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -597,7 +694,12 @@ const PatientDashboard = () => {
                 className="glass rounded-2xl p-6 shadow-card"
               >
                 <h3 className="font-semibold text-foreground mb-4">Your Reports</h3>
-                {reports.length === 0 ? (
+                {isLoadingReports ? (
+                  <div className="text-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                    <p className="text-muted-foreground mt-2">Loading reports...</p>
+                  </div>
+                ) : reports.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No reports uploaded yet</p>
@@ -614,9 +716,24 @@ const PatientDashboard = () => {
                             <p className="text-sm text-muted-foreground">{report.description} • {report.date}</p>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm">
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDownloadReport(report.url, report.name)}
+                            className="text-primary hover:text-primary"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDeleteReport(report.url)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
