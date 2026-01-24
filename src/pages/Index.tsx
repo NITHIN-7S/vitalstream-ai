@@ -113,18 +113,15 @@ const Index = () => {
               transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
               className="text-6xl md:text-8xl font-bold mb-4 leading-tight"
             >
+              <span className="text-foreground">Vital Stream </span>
               <motion.span 
-                className="text-gradient inline-block"
+                className="text-primary inline-block"
                 animate={{ 
-                  textShadow: [
-                    "0 0 20px hsl(var(--primary) / 0.5)",
-                    "0 0 40px hsl(var(--primary) / 0.8)",
-                    "0 0 20px hsl(var(--primary) / 0.5)"
-                  ]
+                  opacity: [0.9, 1, 0.9]
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                Vital Stream AI
+                AI
               </motion.span>
             </motion.h1>
 
