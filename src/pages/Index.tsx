@@ -113,7 +113,7 @@ const Index = () => {
               transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
               className="text-6xl md:text-8xl font-bold mb-4 leading-tight"
             >
-              <span className="text-foreground">Vital Stream </span>
+              <span className="text-foreground">Health</span>
               <motion.span 
                 className="text-primary inline-block"
                 animate={{ 
@@ -121,7 +121,7 @@ const Index = () => {
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                AI
+                Pulse
               </motion.span>
             </motion.h1>
 

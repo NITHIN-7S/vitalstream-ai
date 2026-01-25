@@ -27,6 +27,7 @@ interface Patient {
   emergency_phone?: string;
   admission_date?: string;
   email?: string;
+  user_id?: string;
 }
 
 interface MyPatient {
@@ -259,7 +260,14 @@ const DoctorDashboard = () => {
       <PatientDetailModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        patient={selectedPatient}
+        patient={selectedPatient ? {
+          ...selectedPatient,
+          bedNumber: selectedPatient.bed_number,
+          admissionDate: selectedPatient.admission_date,
+          emergencyContact: selectedPatient.emergency_contact,
+          emergencyPhone: selectedPatient.emergency_phone,
+          user_id: selectedPatient.user_id
+        } : null}
         vitals={selectedPatientVitals}
       />
 

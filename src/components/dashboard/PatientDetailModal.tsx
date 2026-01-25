@@ -1,7 +1,10 @@
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Thermometer, Wind, Droplets, Activity, User, Phone, Calendar, MapPin } from "lucide-react";
+import { X, Heart, Thermometer, Wind, Droplets, Activity, User, Phone, Calendar, MapPin, FileText, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ECGWave from "@/components/animations/ECGWave";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface PatientVitals {
   heartRate: number;
@@ -25,6 +28,12 @@ interface Patient {
   admissionDate?: string;
   emergencyContact?: string;
   emergencyPhone?: string;
+  user_id?: string;
+}
+
+interface MedicalReport {
+  name: string;
+  created_at: string;
 }
 
 interface PatientDetailModalProps {
@@ -56,6 +65,63 @@ const statusConfig = {
 };
 
 const PatientDetailModal = ({ isOpen, onClose, patient, vitals }: PatientDetailModalProps) => {
+  const [reports, setReports] = useState<MedicalReport[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen && patient?.user_id) {
+      fetchReports();
+    }
+  }, [isOpen, patient?.user_id]);
+
+  const fetchReports = async () => {
+    if (!patient?.user_id) return;
+    
+    setIsLoadingReports(true);
+    try {
+      const { data, error } = await supabase.storage
+        .from("medical-reports")
+        .list(patient.user_id, {
+          limit: 50,
+          sortBy: { column: "created_at", order: "desc" },
+        });
+
+      if (error) throw error;
+      setReports(data || []);
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+    } finally {
+      setIsLoadingReports(false);
+    }
+  };
+
+  const handleDownloadReport = async (fileName: string) => {
+    if (!patient?.user_id) return;
+    
+    setDownloadingReport(fileName);
+    try {
+      const { data, error } = await supabase.storage
+        .from("medical-reports")
+        .download(`${patient.user_id}/${fileName}`);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Report downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading report:", error);
+      toast.error("Failed to download report");
+    } finally {
+      setDownloadingReport(null);
+    }
+  };
+
   if (!patient) return null;
   
   const config = statusConfig[patient.status];
@@ -194,6 +260,57 @@ const PatientDetailModal = ({ isOpen, onClose, patient, vitals }: PatientDetailM
                   <InfoItem icon={Phone} label="Emergency Contact" value={patient.emergencyContact || "Not specified"} />
                 </div>
               </div>
+
+              {/* Medical Reports Section */}
+              {patient.user_id && (
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    Medical Reports
+                  </h3>
+                  {isLoadingReports ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : reports.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground bg-secondary/30 rounded-xl">
+                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>No medical reports uploaded</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {reports.map((report) => (
+                        <motion.div
+                          key={report.name}
+                          whileHover={{ scale: 1.01 }}
+                          className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                            <span className="text-sm font-medium text-foreground truncate">
+                              {report.name}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDownloadReport(report.name)}
+                            disabled={downloadingReport === report.name}
+                            className="gap-1 flex-shrink-0"
+                          >
+                            {downloadingReport === report.name ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Download className="h-4 w-4" />
+                            )}
+                            Download
+                          </Button>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Footer */}
