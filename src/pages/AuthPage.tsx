@@ -221,8 +221,12 @@ const AuthPage = () => {
 
       toast({
         title: "Account created!",
-        description: "Welcome to HealthPulse.",
+        description: isDoctor 
+          ? "Welcome to HealthPulse. You'll be prompted to connect Google Fit."
+          : "Welcome to HealthPulse.",
       });
+
+      // Redirect to dashboard - Google Fit connection will be prompted there
       navigate(getRedirectPath());
     } catch (error: any) {
       toast({

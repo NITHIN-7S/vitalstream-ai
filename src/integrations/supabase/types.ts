@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      doctor_google_fit: {
+        Row: {
+          access_token: string
+          created_at: string
+          doctor_id: string
+          id: string
+          last_sync_at: string | null
+          refresh_token: string
+          token_expires_at: string
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          doctor_id: string
+          id?: string
+          last_sync_at?: string | null
+          refresh_token: string
+          token_expires_at: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          last_sync_at?: string | null
+          refresh_token?: string
+          token_expires_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      doctor_health_data: {
+        Row: {
+          calories_burned: number | null
+          created_at: string
+          data_source: string | null
+          doctor_id: string
+          heart_rate: number | null
+          id: string
+          last_updated: string
+          spo2: number | null
+          steps: number | null
+        }
+        Insert: {
+          calories_burned?: number | null
+          created_at?: string
+          data_source?: string | null
+          doctor_id: string
+          heart_rate?: number | null
+          id?: string
+          last_updated?: string
+          spo2?: number | null
+          steps?: number | null
+        }
+        Update: {
+          calories_burned?: number | null
+          created_at?: string
+          data_source?: string | null
+          doctor_id?: string
+          heart_rate?: number | null
+          id?: string
+          last_updated?: string
+          spo2?: number | null
+          steps?: number | null
+        }
+        Relationships: []
+      }
       doctor_profiles: {
         Row: {
           created_at: string | null

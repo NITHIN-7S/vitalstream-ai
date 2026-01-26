@@ -9,6 +9,7 @@ import LiveChart from "@/components/dashboard/LiveChart";
 import EmergencyAlert from "@/components/dashboard/EmergencyAlert";
 import PatientDetailModal from "@/components/dashboard/PatientDetailModal";
 import AlertsPanel from "@/components/dashboard/AlertsPanel";
+import DoctorHealthPanel from "@/components/dashboard/DoctorHealthPanel";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -396,6 +397,9 @@ const DoctorDashboard = () => {
               Refresh
             </Button>
           </motion.div>
+
+          {/* Doctor Health Panel - Google Fit Integration */}
+          {userId && <DoctorHealthPanel userId={userId} />}
 
           {/* Stats */}
           <motion.div
