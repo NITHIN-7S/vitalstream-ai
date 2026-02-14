@@ -98,21 +98,21 @@ HealthPulse/
 ---
 
 #### `src/pages/AuthPage.tsx`
-**Purpose**: Authentication page for all user roles  
+**Purpose**: Authentication page for all user roles (LOGIN ONLY)  
 **What it does**:
-- Handles login and signup for doctors, patients, receptionists
+- Handles login for doctors, patients, receptionists
 - Detects role from URL parameter (`/auth/doctor`, `/auth/patient`, etc.)
-- Creates user profiles in database on signup
+- **No signup functionality** — all accounts are created by the receptionist
 - Validates credentials and redirects to appropriate dashboard
+- Verifies user role matches the portal they're logging into
 
 **Imports & Why**:
 - `supabase` - For authentication API calls
 - `ECGWave`, `FloatingParticles` - Background animations
-- `ForgotPasswordDialog` - Password reset modal
+- `ForgotPasswordDialog` - Password reset modal (for doctors & receptionists only)
 
 **Connected to**:
-- `doctor_profiles` table - Creates doctor profile on signup
-- `user_roles` table - Stores user role for access control
+- `user_roles` table - Verifies user role for access control
 
 ---
 
@@ -159,22 +159,30 @@ HealthPulse/
 ---
 
 #### `src/pages/ReceptionDashboard.tsx`
-**Purpose**: Dashboard for receptionists to register patients  
+**Purpose**: Dashboard for receptionists to register both patients AND doctors  
 **What it does**:
-- Patient registration form
-- Lists all registered patients
-- Shows patient credentials for new registrations
+- **Patient Registration**: Form to register new patients with auto-generated passwords
+- **Doctor Registration**: Form to register new doctors with auto-generated passwords
+- Lists all registered patients with viewable/copyable credentials
+- Lists all registered doctors with viewable/copyable credentials
 - Allows assigning doctors to patients
+- Password sync: if a doctor changes their password, the updated password is visible here
 
 **Database Tables Used**:
 - `patients` - Creates and lists patients
-- `doctor_profiles` - Lists available doctors
+- `doctor_profiles` - Creates and lists doctors (includes `stored_password` column)
+
+**Calls Edge Functions**:
+- `register-patient` - Creates patient auth account + record
+- `register-doctor` - Creates doctor auth account + profile
 
 ---
 
 #### `src/pages/DoctorSettings.tsx`
 **Purpose**: Settings page for doctors  
-**What it does**: Profile management and preferences for doctors
+**What it does**:
+- Profile management (name, specialization, phone, department, license)
+- Password change — **syncs new password to `doctor_profiles.stored_password`** so the receptionist portal always has the current password
 
 ---
 
@@ -501,7 +509,23 @@ These are **shadcn/ui** components - pre-built, customizable UI primitives:
 
 #### `supabase/functions/register-patient/index.ts`
 **Purpose**: Patient registration edge function  
-**What it does**: Creates patient accounts with secure credentials
+**What it does**:
+- Verifies caller is a receptionist
+- Creates Supabase auth account with auto-generated password
+- Creates `user_roles` entry (role: patient)
+- Creates `patients` record with `stored_password`
+- Returns credentials to receptionist
+
+---
+
+#### `supabase/functions/register-doctor/index.ts`
+**Purpose**: Doctor registration edge function  
+**What it does**:
+- Verifies caller is a receptionist
+- Creates Supabase auth account with auto-generated password
+- Creates `user_roles` entry (role: doctor)
+- Creates `doctor_profiles` record with `stored_password`
+- Returns credentials to receptionist
 
 ---
 
@@ -605,9 +629,14 @@ DoctorHealthPanel display
 
 ### Authentication Flow
 ```
-User enters credentials → AuthPage → supabase.auth → 
-Creates user_roles entry → Creates profile (doctor/patient) →
-Redirects to appropriate dashboard
+RECEPTIONIST registers Doctor/Patient → register-doctor/register-patient edge function →
+Creates auth account + role + profile with stored_password →
+Receptionist sees credentials → Gives to doctor/patient →
+Doctor/Patient logs in via AuthPage (login only, no signup) →
+supabase.auth.signInWithPassword → Verifies role → Redirects to dashboard
+
+If Doctor changes password → DoctorSettings → Updates auth + doctor_profiles.stored_password →
+Receptionist portal shows updated password
 ```
 
 ---

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Mail, Lock, User, Stethoscope, Eye, EyeOff, ArrowLeft, MapPin, Loader2, ClipboardList, Phone } from "lucide-react";
+import { Activity, Mail, Lock, User, Stethoscope, Eye, EyeOff, ArrowLeft, ClipboardList } from "lucide-react";
 import ECGWave from "@/components/animations/ECGWave";
 import FloatingParticles from "@/components/animations/FloatingParticles";
 import { useToast } from "@/hooks/use-toast";
@@ -17,10 +17,8 @@ const AuthPage = () => {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [signupForm, setSignupForm] = useState({ name: "", email: "", password: "", confirmPassword: "", location: "", specialization: "", phone: "" });
 
   // Default to doctor if no role specified
   const currentRole = role || "doctor";
@@ -53,49 +51,6 @@ const AuthPage = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate, isDoctor, isReceptionist]);
-
-  const getLocation = () => {
-    setIsGettingLocation(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          try {
-            // Use reverse geocoding to get address
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-            );
-            const data = await response.json();
-            const address = data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-            setSignupForm(prev => ({ ...prev, location: address }));
-            toast({
-              title: "Location detected",
-              description: "Your location has been added to your profile.",
-            });
-          } catch {
-            setSignupForm(prev => ({ ...prev, location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` }));
-          }
-          setIsGettingLocation(false);
-        },
-        (error) => {
-          console.error("Location error:", error);
-          toast({
-            title: "Location access denied",
-            description: "Please enter your location manually.",
-            variant: "destructive",
-          });
-          setIsGettingLocation(false);
-        }
-      );
-    } else {
-      toast({
-        title: "Geolocation not supported",
-        description: "Please enter your location manually.",
-        variant: "destructive",
-      });
-      setIsGettingLocation(false);
-    }
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,97 +95,6 @@ const AuthPage = () => {
     } catch (error: any) {
       toast({
         title: "Login failed",
-        description: error.message || "An error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (signupForm.password !== signupForm.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (signupForm.password.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: signupForm.email,
-        password: signupForm.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: signupForm.name,
-            role: currentRole,
-          }
-        }
-      });
-
-      if (error) {
-        toast({
-          title: "Signup failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create user role entry for strict role-based access
-      if (data.user) {
-        await supabase.from("user_roles").insert({
-          user_id: data.user.id,
-          role: currentRole as 'doctor' | 'receptionist' | 'patient',
-        });
-      }
-
-      // If doctor, create doctor profile
-      if (isDoctor && data.user) {
-        await supabase.from("doctor_profiles").insert({
-          user_id: data.user.id,
-          full_name: signupForm.name,
-          specialization: signupForm.specialization,
-          phone: signupForm.phone,
-        });
-      }
-
-      // If receptionist, create receptionist profile
-      if (isReceptionist && data.user) {
-        await supabase.from("receptionist_profiles").insert({
-          user_id: data.user.id,
-          full_name: signupForm.name,
-        });
-      }
-
-      toast({
-        title: "Account created!",
-        description: isDoctor 
-          ? "Welcome to HealthPulse. You'll be prompted to connect Google Fit."
-          : "Welcome to HealthPulse.",
-      });
-
-      // Redirect to dashboard - Google Fit connection will be prompted there
-      navigate(getRedirectPath());
-    } catch (error: any) {
-      toast({
-        title: "Signup failed",
         description: error.message || "An error occurred",
         variant: "destructive",
       });
