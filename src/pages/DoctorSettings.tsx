@@ -123,6 +123,14 @@ const DoctorSettings = () => {
 
       if (error) throw error;
 
+      // Sync password to doctor_profiles for receptionist visibility
+      if (userId) {
+        await supabase
+          .from("doctor_profiles")
+          .update({ stored_password: passwords.newPassword })
+          .eq("user_id", userId);
+      }
+
       toast.success("Password updated successfully");
       setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error: any) {

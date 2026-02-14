@@ -21,7 +21,8 @@ import {
   Eye,
   EyeOff,
   Stethoscope,
-  Phone
+  Phone,
+  Building
 } from "lucide-react";
 import {
   Dialog,
@@ -32,7 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-interface PatientCredentials {
+interface Credentials {
   email: string;
   password: string;
 }
@@ -54,32 +55,34 @@ interface Doctor {
   full_name: string | null;
   specialization: string | null;
   phone: string | null;
+  department: string | null;
+  stored_password: string | null;
 }
 
 const ReceptionDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDoctorLoading, setIsDoctorLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
-  const [credentials, setCredentials] = useState<PatientCredentials | null>(null);
+  const [credentialsDialogType, setCredentialsDialogType] = useState<"patient" | "doctor">("patient");
+  const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [registeredPatients, setRegisteredPatients] = useState<RegisteredPatient[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showPatientPasswords, setShowPatientPasswords] = useState<Record<string, boolean>>({});
+  const [showDoctorPasswords, setShowDoctorPasswords] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState("patients");
 
   const [patientForm, setPatientForm] = useState({
-    email: "",
-    name: "",
-    age: "",
-    gender: "",
-    room: "",
-    bed_number: "",
-    diagnosis: "",
-    emergency_contact: "",
-    emergency_phone: "",
-    doctor_id: ""
+    email: "", name: "", age: "", gender: "", room: "",
+    bed_number: "", diagnosis: "", emergency_contact: "",
+    emergency_phone: "", doctor_id: ""
+  });
+
+  const [doctorForm, setDoctorForm] = useState({
+    email: "", full_name: "", specialization: "", phone: "", department: ""
   });
 
   useEffect(() => {
@@ -90,34 +93,25 @@ const ReceptionDashboard = () => {
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate("/auth/receptionist");
-    }
+    if (!session) navigate("/auth/receptionist");
   };
 
   const fetchDoctors = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("doctor_profiles")
-      .select("id, user_id, full_name, specialization, phone");
-    
-    if (data) {
-      setDoctors(data as Doctor[]);
-    }
+      .select("id, user_id, full_name, specialization, phone, department, stored_password");
+    if (data) setDoctors(data as Doctor[]);
   };
 
   const fetchRegisteredPatients = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("patients")
       .select("id, name, email, room, created_at, password_given, stored_password, doctor_id")
       .eq("registered_by", user.id)
       .order("created_at", { ascending: false });
-    
-    if (data) {
-      setRegisteredPatients(data as RegisteredPatient[]);
-    }
+    if (data) setRegisteredPatients(data as RegisteredPatient[]);
   };
 
   const handleLogout = async () => {
@@ -128,52 +122,42 @@ const ReceptionDashboard = () => {
   const handleRegisterPatient = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      const { data, error } = await supabase.functions.invoke("register-patient", {
-        body: patientForm
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
+      const { data, error } = await supabase.functions.invoke("register-patient", { body: patientForm });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
       setCredentials(data.credentials);
+      setCredentialsDialogType("patient");
       setShowCredentialsDialog(true);
-      
-      toast({
-        title: "Patient Registered!",
-        description: "Credentials generated successfully.",
-      });
-
-      // Reset form
-      setPatientForm({
-        email: "",
-        name: "",
-        age: "",
-        gender: "",
-        room: "",
-        bed_number: "",
-        diagnosis: "",
-        emergency_contact: "",
-        emergency_phone: "",
-        doctor_id: ""
-      });
-
+      toast({ title: "Patient Registered!", description: "Credentials generated successfully." });
+      setPatientForm({ email: "", name: "", age: "", gender: "", room: "", bed_number: "", diagnosis: "", emergency_contact: "", emergency_phone: "", doctor_id: "" });
       fetchRegisteredPatients();
-
     } catch (error: any) {
-      toast({
-        title: "Registration Failed",
-        description: error.message || "Failed to register patient",
-        variant: "destructive",
-      });
+      toast({ title: "Registration Failed", description: error.message || "Failed to register patient", variant: "destructive" });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRegisterDoctor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsDoctorLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("register-doctor", { body: doctorForm });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      setCredentials(data.credentials);
+      setCredentialsDialogType("doctor");
+      setShowCredentialsDialog(true);
+      toast({ title: "Doctor Registered!", description: "Credentials generated successfully." });
+      setDoctorForm({ email: "", full_name: "", specialization: "", phone: "", department: "" });
+      fetchDoctors();
+    } catch (error: any) {
+      toast({ title: "Registration Failed", description: error.message || "Failed to register doctor", variant: "destructive" });
+    } finally {
+      setIsDoctorLoading(false);
     }
   };
 
@@ -182,41 +166,37 @@ const ReceptionDashboard = () => {
       navigator.clipboard.writeText(`Email: ${credentials.email}\nPassword: ${credentials.password}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      toast({
-        title: "Copied!",
-        description: "Credentials copied to clipboard",
-      });
+      toast({ title: "Copied!", description: "Credentials copied to clipboard" });
     }
   };
 
   const copyPatientCredentials = (patient: RegisteredPatient) => {
     if (patient.stored_password) {
       navigator.clipboard.writeText(`Email: ${patient.email}\nPassword: ${patient.stored_password}`);
-      toast({
-        title: "Copied!",
-        description: "Patient credentials copied to clipboard",
-      });
+      toast({ title: "Copied!", description: "Patient credentials copied to clipboard" });
+    }
+  };
+
+  const copyDoctorCredentials = (doctor: Doctor) => {
+    if (doctor.stored_password) {
+      const email = registeredPatients.length >= 0 ? "" : ""; // We need email from auth - stored in user metadata
+      navigator.clipboard.writeText(`Password: ${doctor.stored_password}`);
+      toast({ title: "Copied!", description: "Doctor password copied to clipboard" });
     }
   };
 
   const markPasswordGiven = async (patientId: string) => {
-    await supabase
-      .from("patients")
-      .update({ password_given: true })
-      .eq("id", patientId);
-    
+    await supabase.from("patients").update({ password_given: true }).eq("id", patientId);
     fetchRegisteredPatients();
-    toast({
-      title: "Updated",
-      description: "Patient marked as credentials given",
-    });
+    toast({ title: "Updated", description: "Patient marked as credentials given" });
   };
 
   const togglePatientPassword = (patientId: string) => {
-    setShowPatientPasswords(prev => ({
-      ...prev,
-      [patientId]: !prev[patientId]
-    }));
+    setShowPatientPasswords(prev => ({ ...prev, [patientId]: !prev[patientId] }));
+  };
+
+  const toggleDoctorPassword = (doctorId: string) => {
+    setShowDoctorPasswords(prev => ({ ...prev, [doctorId]: !prev[doctorId] }));
   };
 
   const getDoctorById = (doctorId: string | null) => {
@@ -258,70 +238,40 @@ const ReceptionDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
+          {/* PATIENTS TAB */}
           <TabsContent value="patients">
             <div className="grid lg:grid-cols-2 gap-8">
               {/* Patient Registration Form */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <UserPlus className="h-5 w-5 text-primary" />
                       Register New Patient
                     </CardTitle>
-                    <CardDescription>
-                      Enter patient details to generate login credentials
-                    </CardDescription>
+                    <CardDescription>Enter patient details to generate login credentials</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleRegisterPatient} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="name">Full Name *</Label>
-                          <Input
-                            id="name"
-                            value={patientForm.name}
-                            onChange={(e) => setPatientForm({ ...patientForm, name: e.target.value })}
-                            placeholder="Patient's full name"
-                            required
-                          />
+                          <Input id="name" value={patientForm.name} onChange={(e) => setPatientForm({ ...patientForm, name: e.target.value })} placeholder="Patient's full name" required />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="email">Email *</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={patientForm.email}
-                            onChange={(e) => setPatientForm({ ...patientForm, email: e.target.value })}
-                            placeholder="patient@email.com"
-                            required
-                          />
+                          <Input id="email" type="email" value={patientForm.email} onChange={(e) => setPatientForm({ ...patientForm, email: e.target.value })} placeholder="patient@email.com" required />
                         </div>
                       </div>
-
                       <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="age">Age *</Label>
-                          <Input
-                            id="age"
-                            type="number"
-                            value={patientForm.age}
-                            onChange={(e) => setPatientForm({ ...patientForm, age: e.target.value })}
-                            placeholder="Age"
-                            required
-                          />
+                          <Input id="age" type="number" value={patientForm.age} onChange={(e) => setPatientForm({ ...patientForm, age: e.target.value })} placeholder="Age" required />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="gender">Gender</Label>
-                          <Select
-                            value={patientForm.gender}
-                            onValueChange={(value) => setPatientForm({ ...patientForm, gender: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
+                          <Select value={patientForm.gender} onValueChange={(value) => setPatientForm({ ...patientForm, gender: value })}>
+                            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                             <SelectContent className="bg-background border">
                               <SelectItem value="Male">Male</SelectItem>
                               <SelectItem value="Female">Female</SelectItem>
@@ -331,44 +281,24 @@ const ReceptionDashboard = () => {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="room">Room *</Label>
-                          <Input
-                            id="room"
-                            value={patientForm.room}
-                            onChange={(e) => setPatientForm({ ...patientForm, room: e.target.value })}
-                            placeholder="Room #"
-                            required
-                          />
+                          <Input id="room" value={patientForm.room} onChange={(e) => setPatientForm({ ...patientForm, room: e.target.value })} placeholder="Room #" required />
                         </div>
                       </div>
-
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="bed_number">Bed Number</Label>
-                          <Input
-                            id="bed_number"
-                            value={patientForm.bed_number}
-                            onChange={(e) => setPatientForm({ ...patientForm, bed_number: e.target.value })}
-                            placeholder="Bed #"
-                          />
+                          <Input id="bed_number" value={patientForm.bed_number} onChange={(e) => setPatientForm({ ...patientForm, bed_number: e.target.value })} placeholder="Bed #" />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="doctor_id">Assigned Doctor *</Label>
-                          <Select
-                            value={patientForm.doctor_id}
-                            onValueChange={(value) => setPatientForm({ ...patientForm, doctor_id: value })}
-                            required
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select Doctor" />
-                            </SelectTrigger>
+                          <Select value={patientForm.doctor_id} onValueChange={(value) => setPatientForm({ ...patientForm, doctor_id: value })} required>
+                            <SelectTrigger><SelectValue placeholder="Select Doctor" /></SelectTrigger>
                             <SelectContent className="bg-background border">
                               {doctors.map((doctor) => (
                                 <SelectItem key={doctor.user_id} value={doctor.user_id}>
                                   <div className="flex flex-col">
                                     <span>{doctor.full_name || "Unknown"}</span>
-                                    {doctor.specialization && (
-                                      <span className="text-xs text-muted-foreground">{doctor.specialization}</span>
-                                    )}
+                                    {doctor.specialization && <span className="text-xs text-muted-foreground">{doctor.specialization}</span>}
                                   </div>
                                 </SelectItem>
                               ))}
@@ -376,51 +306,22 @@ const ReceptionDashboard = () => {
                           </Select>
                         </div>
                       </div>
-
                       <div className="space-y-2">
                         <Label htmlFor="diagnosis">Diagnosis</Label>
-                        <Textarea
-                          id="diagnosis"
-                          value={patientForm.diagnosis}
-                          onChange={(e) => setPatientForm({ ...patientForm, diagnosis: e.target.value })}
-                          placeholder="Primary diagnosis or reason for admission"
-                          rows={2}
-                        />
+                        <Textarea id="diagnosis" value={patientForm.diagnosis} onChange={(e) => setPatientForm({ ...patientForm, diagnosis: e.target.value })} placeholder="Primary diagnosis or reason for admission" rows={2} />
                       </div>
-
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="emergency_contact">Emergency Contact</Label>
-                          <Input
-                            id="emergency_contact"
-                            value={patientForm.emergency_contact}
-                            onChange={(e) => setPatientForm({ ...patientForm, emergency_contact: e.target.value })}
-                            placeholder="Contact name"
-                          />
+                          <Input id="emergency_contact" value={patientForm.emergency_contact} onChange={(e) => setPatientForm({ ...patientForm, emergency_contact: e.target.value })} placeholder="Contact name" />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="emergency_phone">Emergency Phone</Label>
-                          <Input
-                            id="emergency_phone"
-                            value={patientForm.emergency_phone}
-                            onChange={(e) => setPatientForm({ ...patientForm, emergency_phone: e.target.value })}
-                            placeholder="Phone number"
-                          />
+                          <Input id="emergency_phone" value={patientForm.emergency_phone} onChange={(e) => setPatientForm({ ...patientForm, emergency_phone: e.target.value })} placeholder="Phone number" />
                         </div>
                       </div>
-
                       <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Registering...
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            Register Patient
-                          </>
-                        )}
+                        {isLoading ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Registering...</>) : (<><UserPlus className="h-4 w-4 mr-2" />Register Patient</>)}
                       </Button>
                     </form>
                   </CardContent>
@@ -428,20 +329,14 @@ const ReceptionDashboard = () => {
               </motion.div>
 
               {/* All Registered Patients */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <ClipboardList className="h-5 w-5 text-primary" />
                       All Registered Patients
                     </CardTitle>
-                    <CardDescription>
-                      View and manage patient credentials
-                    </CardDescription>
+                    <CardDescription>View and manage patient credentials</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {registeredPatients.length === 0 ? (
@@ -454,75 +349,42 @@ const ReceptionDashboard = () => {
                         {registeredPatients.map((patient) => {
                           const assignedDoctor = getDoctorById(patient.doctor_id);
                           return (
-                            <div
-                              key={patient.id}
-                              className="p-4 rounded-lg bg-muted/50 space-y-3"
-                            >
+                            <div key={patient.id} className="p-4 rounded-lg bg-muted/50 space-y-3">
                               <div className="flex items-center justify-between">
                                 <div>
                                   <p className="font-medium">{patient.name}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    Room {patient.room}
-                                  </p>
+                                  <p className="text-sm text-muted-foreground">Room {patient.room}</p>
                                 </div>
                                 {!patient.password_given ? (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => markPasswordGiven(patient.id)}
-                                  >
-                                    <Check className="h-4 w-4 mr-1" />
-                                    Mark Given
+                                  <Button size="sm" variant="outline" onClick={() => markPasswordGiven(patient.id)}>
+                                    <Check className="h-4 w-4 mr-1" />Mark Given
                                   </Button>
                                 ) : (
-                                  <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
-                                    ✓ Given
-                                  </span>
+                                  <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">✓ Given</span>
                                 )}
                               </div>
-                              
-                              {/* Credentials */}
                               <div className="p-3 bg-background rounded-lg border">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-xs font-medium text-muted-foreground">LOGIN CREDENTIALS</span>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => copyPatientCredentials(patient)}
-                                  >
+                                  <Button size="sm" variant="ghost" onClick={() => copyPatientCredentials(patient)}>
                                     <Copy className="h-3 w-3" />
                                   </Button>
                                 </div>
                                 <p className="text-sm font-mono">{patient.email}</p>
                                 <div className="flex items-center gap-2 mt-1">
                                   <p className="text-sm font-mono">
-                                    {showPatientPasswords[patient.id] 
-                                      ? patient.stored_password || "N/A"
-                                      : "••••••••••"}
+                                    {showPatientPasswords[patient.id] ? patient.stored_password || "N/A" : "••••••••••"}
                                   </p>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => togglePatientPassword(patient.id)}
-                                  >
-                                    {showPatientPasswords[patient.id] ? (
-                                      <EyeOff className="h-3 w-3" />
-                                    ) : (
-                                      <Eye className="h-3 w-3" />
-                                    )}
+                                  <Button type="button" variant="ghost" size="sm" onClick={() => togglePatientPassword(patient.id)}>
+                                    {showPatientPasswords[patient.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                                   </Button>
                                 </div>
                               </div>
-
-                              {/* Assigned Doctor */}
                               {assignedDoctor && (
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                   <Stethoscope className="h-3 w-3" />
                                   <span>Dr. {assignedDoctor.full_name}</span>
-                                  {assignedDoctor.specialization && (
-                                    <span className="text-primary">({assignedDoctor.specialization})</span>
-                                  )}
+                                  {assignedDoctor.specialization && <span className="text-primary">({assignedDoctor.specialization})</span>}
                                 </div>
                               )}
                             </div>
@@ -536,67 +398,126 @@ const ReceptionDashboard = () => {
             </div>
           </TabsContent>
 
+          {/* DOCTORS TAB */}
           <TabsContent value="doctors">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Stethoscope className="h-5 w-5 text-primary" />
-                    Registered Doctors
-                  </CardTitle>
-                  <CardDescription>
-                    All doctors registered in the system
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {doctors.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Stethoscope className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No doctors registered yet</p>
-                    </div>
-                  ) : (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {doctors.map((doctor) => (
-                        <div
-                          key={doctor.id}
-                          className="p-4 rounded-lg bg-muted/50 space-y-3"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                              <span className="text-lg font-bold text-primary">
-                                {(doctor.full_name || "DR").split(' ').map(n => n[0]).join('').slice(0, 2)}
-                              </span>
-                            </div>
-                            <div>
-                              <p className="font-medium">Dr. {doctor.full_name || "Unknown"}</p>
-                              {doctor.specialization && (
-                                <p className="text-sm text-primary">{doctor.specialization}</p>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {doctor.phone && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Phone className="h-4 w-4" />
-                              <span>{doctor.phone}</span>
-                            </div>
-                          )}
-
-                          <div className="pt-2 border-t">
-                            <p className="text-xs text-muted-foreground">
-                              Patients assigned: {registeredPatients.filter(p => p.doctor_id === doctor.user_id).length}
-                            </p>
-                          </div>
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* Doctor Registration Form */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <UserPlus className="h-5 w-5 text-primary" />
+                      Register New Doctor
+                    </CardTitle>
+                    <CardDescription>Enter doctor details to create their account</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleRegisterDoctor} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="doc-name">Full Name *</Label>
+                          <Input id="doc-name" value={doctorForm.full_name} onChange={(e) => setDoctorForm({ ...doctorForm, full_name: e.target.value })} placeholder="Dr. Full Name" required />
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
+                        <div className="space-y-2">
+                          <Label htmlFor="doc-email">Email *</Label>
+                          <Input id="doc-email" type="email" value={doctorForm.email} onChange={(e) => setDoctorForm({ ...doctorForm, email: e.target.value })} placeholder="doctor@email.com" required />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="doc-specialization">Specialization *</Label>
+                          <Input id="doc-specialization" value={doctorForm.specialization} onChange={(e) => setDoctorForm({ ...doctorForm, specialization: e.target.value })} placeholder="e.g., Cardiologist" required />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="doc-phone">Phone *</Label>
+                          <Input id="doc-phone" type="tel" value={doctorForm.phone} onChange={(e) => setDoctorForm({ ...doctorForm, phone: e.target.value })} placeholder="+91 9876543210" required />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="doc-department">Department</Label>
+                        <Input id="doc-department" value={doctorForm.department} onChange={(e) => setDoctorForm({ ...doctorForm, department: e.target.value })} placeholder="e.g., ICU, Cardiology" />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={isDoctorLoading}>
+                        {isDoctorLoading ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Registering...</>) : (<><Stethoscope className="h-4 w-4 mr-2" />Register Doctor</>)}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Registered Doctors List */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Stethoscope className="h-5 w-5 text-primary" />
+                      Registered Doctors
+                    </CardTitle>
+                    <CardDescription>All doctors registered in the system with credentials</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {doctors.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Stethoscope className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No doctors registered yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                        {doctors.map((doctor) => (
+                          <div key={doctor.id} className="p-4 rounded-lg bg-muted/50 space-y-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                                <span className="text-lg font-bold text-primary">
+                                  {(doctor.full_name || "DR").split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-medium">Dr. {doctor.full_name || "Unknown"}</p>
+                                {doctor.specialization && <p className="text-sm text-primary">{doctor.specialization}</p>}
+                              </div>
+                            </div>
+                            {doctor.phone && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Phone className="h-4 w-4" /><span>{doctor.phone}</span>
+                              </div>
+                            )}
+                            {doctor.department && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Building className="h-4 w-4" /><span>{doctor.department}</span>
+                              </div>
+                            )}
+                            {/* Doctor Credentials */}
+                            {doctor.stored_password && (
+                              <div className="p-3 bg-background rounded-lg border">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-medium text-muted-foreground">LOGIN CREDENTIALS</span>
+                                  <Button size="sm" variant="ghost" onClick={() => copyDoctorCredentials(doctor)}>
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-mono">
+                                    {showDoctorPasswords[doctor.id] ? doctor.stored_password : "••••••••••"}
+                                  </p>
+                                  <Button type="button" variant="ghost" size="sm" onClick={() => toggleDoctorPassword(doctor.id)}>
+                                    {showDoctorPasswords[doctor.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                            <div className="pt-2 border-t">
+                              <p className="text-xs text-muted-foreground">
+                                Patients assigned: {registeredPatients.filter(p => p.doctor_id === doctor.user_id).length}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
           </TabsContent>
         </Tabs>
       </main>
@@ -607,13 +528,12 @@ const ReceptionDashboard = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Check className="h-5 w-5 text-green-500" />
-              Patient Registered Successfully
+              {credentialsDialogType === "patient" ? "Patient" : "Doctor"} Registered Successfully
             </DialogTitle>
             <DialogDescription>
-              Share these credentials with the patient or their relative
+              Share these credentials with the {credentialsDialogType === "patient" ? "patient or their relative" : "doctor"}
             </DialogDescription>
           </DialogHeader>
-          
           {credentials && (
             <div className="space-y-4 py-4">
               <div className="p-4 bg-muted rounded-lg space-y-3">
@@ -624,45 +544,21 @@ const ReceptionDashboard = () => {
                 <div>
                   <Label className="text-xs text-muted-foreground">Password</Label>
                   <div className="flex items-center gap-2">
-                    <p className="font-mono text-sm">
-                      {showPassword ? credentials.password : "••••••••••"}
-                    </p>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
+                    <p className="font-mono text-sm">{showPassword ? credentials.password : "••••••••••"}</p>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
               </div>
-              
               <div className="flex gap-2">
                 <Button onClick={copyCredentials} className="flex-1">
-                  {copied ? (
-                    <>
-                      <Check className="h-4 w-4 mr-2" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy Credentials
-                    </>
-                  )}
+                  {copied ? (<><Check className="h-4 w-4 mr-2" />Copied!</>) : (<><Copy className="h-4 w-4 mr-2" />Copy Credentials</>)}
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowCredentialsDialog(false)}
-                >
-                  Done
-                </Button>
+                <Button variant="outline" onClick={() => setShowCredentialsDialog(false)}>Done</Button>
               </div>
-              
               <p className="text-xs text-muted-foreground text-center">
-                ⚠️ Credentials are stored securely. You can always view them from the patient list.
+                ⚠️ Credentials are stored securely. You can always view them from the {credentialsDialogType} list.
               </p>
             </div>
           )}
