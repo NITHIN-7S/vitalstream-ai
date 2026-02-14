@@ -93,6 +93,7 @@ export type Database = {
           phone: string | null
           profession: string | null
           specialization: string | null
+          stored_password: string | null
           updated_at: string | null
           user_id: string
         }
@@ -105,6 +106,7 @@ export type Database = {
           phone?: string | null
           profession?: string | null
           specialization?: string | null
+          stored_password?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -117,6 +119,7 @@ export type Database = {
           phone?: string | null
           profession?: string | null
           specialization?: string | null
+          stored_password?: string | null
           updated_at?: string | null
           user_id?: string
         }

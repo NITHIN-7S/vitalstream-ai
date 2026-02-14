@@ -11,3 +11,7 @@ verify_jwt = false
 [functions.google-fit-data]
 enabled = true
 verify_jwt = false
+
+[functions.register-doctor]
+enabled = true
+verify_jwt = false
