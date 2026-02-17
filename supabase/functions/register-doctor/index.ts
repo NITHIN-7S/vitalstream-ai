@@ -68,7 +68,9 @@ Deno.serve(async (req) => {
 
     const password = generatePassword(10);
 
-    // Create auth user
+    let userId: string;
+
+    // Try to create auth user, handle existing user case
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -77,15 +79,42 @@ Deno.serve(async (req) => {
     });
 
     if (authError) {
-      return new Response(
-        JSON.stringify({ error: authError.message }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // If user already exists, find them and update their password
+      if (authError.message.includes('already been registered')) {
+        const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        const existingUser = users?.find(u => u.email === email);
+        
+        if (!existingUser || listError) {
+          return new Response(
+            JSON.stringify({ error: 'User exists but could not be found' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        userId = existingUser.id;
+
+        // Update password and metadata
+        await supabaseAdmin.auth.admin.updateUserById(userId, {
+          password,
+          user_metadata: { full_name, role: 'doctor' }
+        });
+
+        // Clean up old data for this user
+        await supabaseAdmin.from('doctor_profiles').delete().eq('user_id', userId);
+        await supabaseAdmin.from('user_roles').delete().eq('user_id', userId);
+      } else {
+        return new Response(
+          JSON.stringify({ error: authError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else {
+      userId = authData.user!.id;
     }
 
     // Create user role
     await supabaseAdmin.from('user_roles').insert({
-      user_id: authData.user?.id,
+      user_id: userId,
       role: 'doctor'
     });
 
@@ -93,7 +122,7 @@ Deno.serve(async (req) => {
     const { data: doctorData, error: doctorError } = await supabaseAdmin
       .from('doctor_profiles')
       .insert({
-        user_id: authData.user?.id,
+        user_id: userId,
         full_name,
         specialization,
         phone,
@@ -104,7 +133,6 @@ Deno.serve(async (req) => {
       .single();
 
     if (doctorError) {
-      await supabaseAdmin.auth.admin.deleteUser(authData.user!.id);
       return new Response(
         JSON.stringify({ error: doctorError.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
