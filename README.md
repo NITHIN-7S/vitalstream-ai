@@ -161,12 +161,12 @@ HealthPulse/
 #### `src/pages/ReceptionDashboard.tsx`
 **Purpose**: Dashboard for receptionists to register both patients AND doctors  
 **What it does**:
-- **Patient Registration**: Form to register new patients with auto-generated passwords
-- **Doctor Registration**: Form to register new doctors with auto-generated passwords
-- Lists all registered patients with viewable/copyable credentials
-- Lists all registered doctors with viewable/copyable credentials
+- **Patient Registration**: Centered form to register new patients with auto-generated passwords
+- **Doctor Registration**: Centered form to register new doctors with auto-generated passwords
+- Registered patient list accessible via a floating **Users icon** at the bottom-right corner (slides in as a panel)
+- Registered doctor list accessible via a floating **Stethoscope icon** at the bottom-right corner (slides in as a panel)
 - Allows assigning doctors to patients
-- Password sync: if a doctor changes their password, the updated password is visible here
+- Password sync: if a doctor changes their password, the updated password is visible in the doctor panel
 
 **Database Tables Used**:
 - `patients` - Creates and lists patients

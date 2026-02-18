@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +22,9 @@ import {
   EyeOff,
   Stethoscope,
   Phone,
-  Building
+  Building,
+  X,
+  ChevronLeft
 } from "lucide-react";
 import {
   Dialog,
@@ -74,6 +76,10 @@ const ReceptionDashboard = () => {
   const [showPatientPasswords, setShowPatientPasswords] = useState<Record<string, boolean>>({});
   const [showDoctorPasswords, setShowDoctorPasswords] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState("patients");
+
+  // Panel states for slide-in panels
+  const [showPatientPanel, setShowPatientPanel] = useState(false);
+  const [showDoctorPanel, setShowDoctorPanel] = useState(false);
 
   const [patientForm, setPatientForm] = useState({
     email: "", name: "", age: "", gender: "", room: "",
@@ -179,7 +185,6 @@ const ReceptionDashboard = () => {
 
   const copyDoctorCredentials = (doctor: Doctor) => {
     if (doctor.stored_password) {
-      const email = registeredPatients.length >= 0 ? "" : ""; // We need email from auth - stored in user metadata
       navigator.clipboard.writeText(`Password: ${doctor.stored_password}`);
       toast({ title: "Copied!", description: "Doctor password copied to clipboard" });
     }
@@ -225,23 +230,23 @@ const ReceptionDashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="patients" className="gap-2">
-              <Users className="h-4 w-4" />
-              Patients
-            </TabsTrigger>
-            <TabsTrigger value="doctors" className="gap-2">
-              <Stethoscope className="h-4 w-4" />
-              Doctors
-            </TabsTrigger>
-          </TabsList>
+      {/* Main Content — centered registration forms */}
+      <main className="container mx-auto px-4 py-10 flex justify-center">
+        <div className="w-full max-w-2xl">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="patients" className="gap-2">
+                <Users className="h-4 w-4" />
+                Register Patient
+              </TabsTrigger>
+              <TabsTrigger value="doctors" className="gap-2">
+                <Stethoscope className="h-4 w-4" />
+                Register Doctor
+              </TabsTrigger>
+            </TabsList>
 
-          {/* PATIENTS TAB */}
-          <TabsContent value="patients">
-            <div className="grid lg:grid-cols-2 gap-8">
-              {/* Patient Registration Form */}
+            {/* PATIENT REGISTRATION TAB */}
+            <TabsContent value="patients">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                 <Card>
                   <CardHeader>
@@ -327,81 +332,10 @@ const ReceptionDashboard = () => {
                   </CardContent>
                 </Card>
               </motion.div>
+            </TabsContent>
 
-              {/* All Registered Patients */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <ClipboardList className="h-5 w-5 text-primary" />
-                      All Registered Patients
-                    </CardTitle>
-                    <CardDescription>View and manage patient credentials</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {registeredPatients.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No patients registered yet</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                        {registeredPatients.map((patient) => {
-                          const assignedDoctor = getDoctorById(patient.doctor_id);
-                          return (
-                            <div key={patient.id} className="p-4 rounded-lg bg-muted/50 space-y-3">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="font-medium">{patient.name}</p>
-                                  <p className="text-sm text-muted-foreground">Room {patient.room}</p>
-                                </div>
-                                {!patient.password_given ? (
-                                  <Button size="sm" variant="outline" onClick={() => markPasswordGiven(patient.id)}>
-                                    <Check className="h-4 w-4 mr-1" />Mark Given
-                                  </Button>
-                                ) : (
-                                  <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">✓ Given</span>
-                                )}
-                              </div>
-                              <div className="p-3 bg-background rounded-lg border">
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-medium text-muted-foreground">LOGIN CREDENTIALS</span>
-                                  <Button size="sm" variant="ghost" onClick={() => copyPatientCredentials(patient)}>
-                                    <Copy className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                                <p className="text-sm font-mono">{patient.email}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <p className="text-sm font-mono">
-                                    {showPatientPasswords[patient.id] ? patient.stored_password || "N/A" : "••••••••••"}
-                                  </p>
-                                  <Button type="button" variant="ghost" size="sm" onClick={() => togglePatientPassword(patient.id)}>
-                                    {showPatientPasswords[patient.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                                  </Button>
-                                </div>
-                              </div>
-                              {assignedDoctor && (
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <Stethoscope className="h-3 w-3" />
-                                  <span>Dr. {assignedDoctor.full_name}</span>
-                                  {assignedDoctor.specialization && <span className="text-primary">({assignedDoctor.specialization})</span>}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-          </TabsContent>
-
-          {/* DOCTORS TAB */}
-          <TabsContent value="doctors">
-            <div className="grid lg:grid-cols-2 gap-8">
-              {/* Doctor Registration Form */}
+            {/* DOCTOR REGISTRATION TAB */}
+            <TabsContent value="doctors">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                 <Card>
                   <CardHeader>
@@ -444,83 +378,229 @@ const ReceptionDashboard = () => {
                   </CardContent>
                 </Card>
               </motion.div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
 
-              {/* Registered Doctors List */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Stethoscope className="h-5 w-5 text-primary" />
-                      Registered Doctors
-                    </CardTitle>
-                    <CardDescription>All doctors registered in the system with credentials</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {doctors.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Stethoscope className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No doctors registered yet</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4 max-h-[600px] overflow-y-auto">
-                        {doctors.map((doctor) => (
-                          <div key={doctor.id} className="p-4 rounded-lg bg-muted/50 space-y-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                                <span className="text-lg font-bold text-primary">
-                                  {(doctor.full_name || "DR").split(' ').map(n => n[0]).join('').slice(0, 2)}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="font-medium">Dr. {doctor.full_name || "Unknown"}</p>
-                                {doctor.specialization && <p className="text-sm text-primary">{doctor.specialization}</p>}
-                              </div>
+      {/* Floating Action Buttons — bottom right */}
+      <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40">
+        {/* Doctors list FAB */}
+        <motion.button
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => { setShowDoctorPanel(true); setShowPatientPanel(false); }}
+          className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center relative"
+          title="View Registered Doctors"
+        >
+          <Stethoscope className="h-6 w-6" />
+          {doctors.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center font-bold">
+              {doctors.length}
+            </span>
+          )}
+        </motion.button>
+
+        {/* Patients list FAB */}
+        <motion.button
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => { setShowPatientPanel(true); setShowDoctorPanel(false); }}
+          className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center relative"
+          title="View Registered Patients"
+        >
+          <Users className="h-6 w-6" />
+          {registeredPatients.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center font-bold">
+              {registeredPatients.length}
+            </span>
+          )}
+        </motion.button>
+      </div>
+
+      {/* Slide-in Patient Details Panel */}
+      <AnimatePresence>
+        {showPatientPanel && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 z-40"
+              onClick={() => setShowPatientPanel(false)}
+            />
+            {/* Panel */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 h-full w-full max-w-md bg-background border-l shadow-2xl z-50 flex flex-col"
+            >
+              <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-primary" />
+                  <h2 className="font-semibold text-lg">Registered Patients</h2>
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{registeredPatients.length}</span>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setShowPatientPanel(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                {registeredPatients.length === 0 ? (
+                  <div className="text-center py-16 text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No patients registered yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {registeredPatients.map((patient) => {
+                      const assignedDoctor = getDoctorById(patient.doctor_id);
+                      return (
+                        <div key={patient.id} className="p-4 rounded-lg bg-muted/50 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">{patient.name}</p>
+                              <p className="text-sm text-muted-foreground">Room {patient.room}</p>
                             </div>
-                            {doctor.phone && (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Phone className="h-4 w-4" /><span>{doctor.phone}</span>
-                              </div>
+                            {!patient.password_given ? (
+                              <Button size="sm" variant="outline" onClick={() => markPasswordGiven(patient.id)}>
+                                <Check className="h-4 w-4 mr-1" />Mark Given
+                              </Button>
+                            ) : (
+                              <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">✓ Given</span>
                             )}
-                            {doctor.department && (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Building className="h-4 w-4" /><span>{doctor.department}</span>
-                              </div>
-                            )}
-                            {/* Doctor Credentials */}
-                            {doctor.stored_password && (
-                              <div className="p-3 bg-background rounded-lg border">
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-medium text-muted-foreground">LOGIN CREDENTIALS</span>
-                                  <Button size="sm" variant="ghost" onClick={() => copyDoctorCredentials(doctor)}>
-                                    <Copy className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <p className="text-sm font-mono">
-                                    {showDoctorPasswords[doctor.id] ? doctor.stored_password : "••••••••••"}
-                                  </p>
-                                  <Button type="button" variant="ghost" size="sm" onClick={() => toggleDoctorPassword(doctor.id)}>
-                                    {showDoctorPasswords[doctor.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                            <div className="pt-2 border-t">
-                              <p className="text-xs text-muted-foreground">
-                                Patients assigned: {registeredPatients.filter(p => p.doctor_id === doctor.user_id).length}
+                          </div>
+                          <div className="p-3 bg-background rounded-lg border">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-medium text-muted-foreground">LOGIN CREDENTIALS</span>
+                              <Button size="sm" variant="ghost" onClick={() => copyPatientCredentials(patient)}>
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <p className="text-sm font-mono">{patient.email}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-sm font-mono">
+                                {showPatientPasswords[patient.id] ? patient.stored_password || "N/A" : "••••••••••"}
                               </p>
+                              <Button type="button" variant="ghost" size="sm" onClick={() => togglePatientPassword(patient.id)}>
+                                {showPatientPasswords[patient.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                              </Button>
                             </div>
                           </div>
-                        ))}
+                          {assignedDoctor && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Stethoscope className="h-3 w-3" />
+                              <span>Dr. {assignedDoctor.full_name}</span>
+                              {assignedDoctor.specialization && <span className="text-primary">({assignedDoctor.specialization})</span>}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Slide-in Doctor Details Panel */}
+      <AnimatePresence>
+        {showDoctorPanel && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 z-40"
+              onClick={() => setShowDoctorPanel(false)}
+            />
+            {/* Panel */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 h-full w-full max-w-md bg-background border-l shadow-2xl z-50 flex flex-col"
+            >
+              <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex items-center gap-2">
+                  <Stethoscope className="h-5 w-5 text-primary" />
+                  <h2 className="font-semibold text-lg">Registered Doctors</h2>
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{doctors.length}</span>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setShowDoctorPanel(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                {doctors.length === 0 ? (
+                  <div className="text-center py-16 text-muted-foreground">
+                    <Stethoscope className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No doctors registered yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {doctors.map((doctor) => (
+                      <div key={doctor.id} className="p-4 rounded-lg bg-muted/50 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                            <span className="text-lg font-bold text-primary">
+                              {(doctor.full_name || "DR").split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium">Dr. {doctor.full_name || "Unknown"}</p>
+                            {doctor.specialization && <p className="text-sm text-primary">{doctor.specialization}</p>}
+                          </div>
+                        </div>
+                        {doctor.phone && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Phone className="h-4 w-4" /><span>{doctor.phone}</span>
+                          </div>
+                        )}
+                        {doctor.department && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Building className="h-4 w-4" /><span>{doctor.department}</span>
+                          </div>
+                        )}
+                        {doctor.stored_password && (
+                          <div className="p-3 bg-background rounded-lg border">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-medium text-muted-foreground">LOGIN CREDENTIALS</span>
+                              <Button size="sm" variant="ghost" onClick={() => copyDoctorCredentials(doctor)}>
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-mono">
+                                {showDoctorPasswords[doctor.id] ? doctor.stored_password : "••••••••••"}
+                              </p>
+                              <Button type="button" variant="ghost" size="sm" onClick={() => toggleDoctorPassword(doctor.id)}>
+                                {showDoctorPasswords[doctor.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        <div className="pt-2 border-t">
+                          <p className="text-xs text-muted-foreground">
+                            Patients assigned: {registeredPatients.filter(p => p.doctor_id === doctor.user_id).length}
+                          </p>
+                        </div>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </main>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Credentials Dialog */}
       <Dialog open={showCredentialsDialog} onOpenChange={setShowCredentialsDialog}>
