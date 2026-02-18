@@ -406,7 +406,7 @@ const ReceptionDashboard = () => {
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => { setShowPatientPanel(true); setShowDoctorPanel(false); }}
-          className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center relative"
+          className="w-14 h-14 rounded-full bg-success text-success-foreground shadow-lg flex items-center justify-center relative"
           title="View Registered Patients"
         >
           <Users className="h-6 w-6" />
