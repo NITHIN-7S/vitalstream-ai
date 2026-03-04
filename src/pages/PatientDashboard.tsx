@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Activity, Bell, Settings, LogOut, Heart, Thermometer, Wind, User, Phone, FileText, MapPin, Loader2, Lock, Eye, EyeOff, Upload, ChevronRight, Download, Trash2 } from "lucide-react";
+import { Activity, Bell, Settings, LogOut, Heart, Thermometer, Wind, User, Phone, FileText, MapPin, Loader2, Lock, Eye, EyeOff, Upload, ChevronRight, Download, Trash2, Wifi } from "lucide-react";
 import VitalCard from "@/components/cards/VitalCard";
 import LiveChart from "@/components/dashboard/LiveChart";
 import ECGWave from "@/components/animations/ECGWave";
@@ -12,6 +12,7 @@ import ContactForm from "@/components/dashboard/ContactForm";
 import NearbyHospitalsMap from "@/components/dashboard/NearbyHospitalsMap";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import DeviceActivity from "@/components/dashboard/DeviceActivity";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +36,7 @@ const PatientDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<"health" | "reports" | "hospitals" | "settings">("health");
+  const [activeSection, setActiveSection] = useState<"health" | "reports" | "hospitals" | "settings" | "devices">("health");
   const [patientData, setPatientData] = useState<PatientData>({
     name: "Loading...",
     age: 0,
@@ -391,6 +392,15 @@ const PatientDashboard = () => {
             Nearby Hospitals
           </button>
           <button
+            onClick={() => setActiveSection("devices")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+              activeSection === "devices" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <Wifi className="h-5 w-5" />
+            My Device
+          </button>
+          <button
             onClick={() => setActiveSection("settings")}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
               activeSection === "settings" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
@@ -433,6 +443,7 @@ const PatientDashboard = () => {
                 {activeSection === "reports" && "Medical Reports"}
                 {activeSection === "hospitals" && "Nearby Hospitals"}
                 {activeSection === "settings" && "Settings"}
+                {activeSection === "devices" && "My Device"}
               </h1>
             </div>
             <div className="flex items-center gap-3">
@@ -761,6 +772,10 @@ const PatientDashboard = () => {
                 <ContactForm />
               </motion.div>
             </>
+          )}
+
+          {activeSection === "devices" && (
+            <DeviceActivity role="patient" />
           )}
 
           {activeSection === "settings" && (

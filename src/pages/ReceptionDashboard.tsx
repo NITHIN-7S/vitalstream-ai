@@ -24,8 +24,10 @@ import {
   Phone,
   Building,
   X,
-  ChevronLeft
+  ChevronLeft,
+  Wifi
 } from "lucide-react";
+import DeviceActivity from "@/components/dashboard/DeviceActivity";
 import {
   Dialog,
   DialogContent,
@@ -65,6 +67,7 @@ const ReceptionDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [availableDevices, setAvailableDevices] = useState<{id: string; device_name: string; device_label: string | null}[]>([]);
   const [isDoctorLoading, setIsDoctorLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
@@ -84,7 +87,7 @@ const ReceptionDashboard = () => {
   const [patientForm, setPatientForm] = useState({
     email: "", name: "", age: "", gender: "", room: "",
     bed_number: "", diagnosis: "", emergency_contact: "",
-    emergency_phone: "", doctor_id: ""
+    emergency_phone: "", doctor_id: "", device_id: ""
   });
 
   const [doctorForm, setDoctorForm] = useState({
@@ -95,6 +98,7 @@ const ReceptionDashboard = () => {
     checkAuth();
     fetchDoctors();
     fetchRegisteredPatients();
+    fetchAvailableDevices();
   }, []);
 
   const checkAuth = async () => {
@@ -120,6 +124,16 @@ const ReceptionDashboard = () => {
     if (data) setRegisteredPatients(data as RegisteredPatient[]);
   };
 
+  const fetchAvailableDevices = async () => {
+    const { data } = await supabase
+      .from("devices")
+      .select("id, device_name, device_label")
+      .eq("status", "available")
+      .is("patient_id", null)
+      .order("device_name", { ascending: true });
+    if (data) setAvailableDevices(data);
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
@@ -133,12 +147,21 @@ const ReceptionDashboard = () => {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
+      // If device was selected, assign it to the patient
+      if (patientForm.device_id && data.patient) {
+        await supabase
+          .from("devices")
+          .update({ patient_id: data.patient.id, doctor_id: patientForm.doctor_id || null, status: "connected", assigned_at: new Date().toISOString() })
+          .eq("id", patientForm.device_id);
+      }
+
       setCredentials(data.credentials);
       setCredentialsDialogType("patient");
       setShowCredentialsDialog(true);
       toast({ title: "Patient Registered!", description: "Credentials generated successfully." });
-      setPatientForm({ email: "", name: "", age: "", gender: "", room: "", bed_number: "", diagnosis: "", emergency_contact: "", emergency_phone: "", doctor_id: "" });
+      setPatientForm({ email: "", name: "", age: "", gender: "", room: "", bed_number: "", diagnosis: "", emergency_contact: "", emergency_phone: "", doctor_id: "", device_id: "" });
       fetchRegisteredPatients();
+      fetchAvailableDevices();
     } catch (error: any) {
       toast({ title: "Registration Failed", description: error.message || "Failed to register patient", variant: "destructive" });
     } finally {
@@ -232,9 +255,9 @@ const ReceptionDashboard = () => {
 
       {/* Main Content — centered registration forms */}
       <main className="container mx-auto px-4 py-10 flex justify-center">
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-4xl">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="patients" className="gap-2">
                 <Users className="h-4 w-4" />
                 Register Patient
@@ -242,6 +265,10 @@ const ReceptionDashboard = () => {
               <TabsTrigger value="doctors" className="gap-2">
                 <Stethoscope className="h-4 w-4" />
                 Register Doctor
+              </TabsTrigger>
+              <TabsTrigger value="devices" className="gap-2">
+                <Wifi className="h-4 w-4" />
+                Device Activity
               </TabsTrigger>
             </TabsList>
 
@@ -312,6 +339,19 @@ const ReceptionDashboard = () => {
                         </div>
                       </div>
                       <div className="space-y-2">
+                        <Label htmlFor="device_id">Assign Device</Label>
+                        <Select value={patientForm.device_id} onValueChange={(value) => setPatientForm({ ...patientForm, device_id: value })}>
+                          <SelectTrigger><SelectValue placeholder="Select Device (optional)" /></SelectTrigger>
+                          <SelectContent className="bg-background border">
+                            {availableDevices.map((device) => (
+                              <SelectItem key={device.id} value={device.id}>
+                                {device.device_name}{device.device_label ? ` — ${device.device_label}` : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
                         <Label htmlFor="diagnosis">Diagnosis</Label>
                         <Textarea id="diagnosis" value={patientForm.diagnosis} onChange={(e) => setPatientForm({ ...patientForm, diagnosis: e.target.value })} placeholder="Primary diagnosis or reason for admission" rows={2} />
                       </div>
@@ -378,6 +418,11 @@ const ReceptionDashboard = () => {
                   </CardContent>
                 </Card>
               </motion.div>
+            </TabsContent>
+
+            {/* DEVICE ACTIVITY TAB */}
+            <TabsContent value="devices">
+              <DeviceActivity role="receptionist" />
             </TabsContent>
           </Tabs>
         </div>

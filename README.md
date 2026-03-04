@@ -1,6 +1,35 @@
 # HealthPulse - IoT-Based Smart Healthcare Monitoring System
 
-A comprehensive hospital management system with real-time patient monitoring, Google Fit integration for doctor health tracking, and multi-role dashboards.
+A comprehensive hospital management system with real-time patient monitoring, IoT device connectivity tracking, Google Fit integration for doctor health tracking, and multi-role dashboards.
+
+## 📡 Device Connectivity Feature
+
+HealthPulse includes a full **Device Activity** module for monitoring IoT patient devices across all roles:
+
+### How It Works
+1. **Receptionist** manages a pool of monitoring devices (pre-seeded + can add new ones on the fly)
+2. During **patient registration**, the receptionist optionally assigns a device from the available pool
+3. Once assigned, the device status changes to "Connected" and begins showing patient vitals from the database
+
+### Role-Based Access
+| Role | What They See |
+|------|---------------|
+| **Receptionist** | All devices (available, connected, warning, offline). Can add new devices. Full stats dashboard. |
+| **Doctor** | Only devices assigned to their patients. Shows vitals from `patient_vitals` table. |
+| **Patient** | Only their own assigned device with current vitals. |
+
+### Device Card Display
+Each connected device card shows:
+- **Patient name & room** assignment
+- **Connection status** (Connected / Disconnected)
+- **All 6 vitals**: HR, SpO₂, Temperature, Blood Pressure, Glucose, Respiratory Rate
+- **Monitoring status** and last update timestamp
+
+### Database
+- `devices` table: `id, device_name, device_label, patient_id, doctor_id, status, assigned_at`
+- Statuses: `available`, `connected`, `warning`, `offline`
+- RLS policies ensure role-based access control
+
 
 ## 🏗️ Project Architecture Overview
 
