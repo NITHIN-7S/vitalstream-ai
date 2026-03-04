@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Activity, Bell, Settings, LogOut, Search, Heart, Thermometer, Wind, Users, AlertTriangle, Plus, ChevronRight, RefreshCw } from "lucide-react";
+import { Activity, Bell, Settings, LogOut, Search, Heart, Thermometer, Wind, Users, AlertTriangle, Plus, ChevronRight, RefreshCw, Wifi } from "lucide-react";
 import VitalCard from "@/components/cards/VitalCard";
 import PatientCard from "@/components/cards/PatientCard";
 import LiveChart from "@/components/dashboard/LiveChart";
 import EmergencyAlert from "@/components/dashboard/EmergencyAlert";
 import PatientDetailModal from "@/components/dashboard/PatientDetailModal";
 import AlertsPanel from "@/components/dashboard/AlertsPanel";
+import DeviceActivity from "@/components/dashboard/DeviceActivity";
 import DoctorHealthPanel from "@/components/dashboard/DoctorHealthPanel";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,7 +64,7 @@ const DoctorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [doctorName, setDoctorName] = useState("Doctor");
-  const [activeTab, setActiveTab] = useState<"patients" | "mypatients" | "alerts">("patients");
+  const [activeTab, setActiveTab] = useState<"patients" | "mypatients" | "alerts" | "devices">("patients");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Check authentication
@@ -320,6 +321,15 @@ const DoctorDashboard = () => {
                 {patients.filter(p => p.status === "critical" || p.status === "warning").length}
               </span>
             )}
+          </button>
+          <button
+            onClick={() => setActiveTab("devices")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === "devices" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <Wifi className="h-5 w-5" />
+            Devices
           </button>
           <Link to="/dashboard/doctor/settings" className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted transition-colors">
             <Settings className="h-5 w-5" />
@@ -642,7 +652,7 @@ const DoctorDashboard = () => {
                 </div>
               )}
             </motion.div>
-          ) : (
+          ) : activeTab === "alerts" ? (
             /* Alerts Tab */
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -660,7 +670,9 @@ const DoctorDashboard = () => {
                 }}
               />
             </motion.div>
-          )}
+          ) : activeTab === "devices" ? (
+            <DeviceActivity role="doctor" userId={userId || undefined} />
+          ) : null}
         </div>
       </main>
     </div>

@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      devices: {
+        Row: {
+          assigned_at: string | null
+          created_at: string
+          device_label: string | null
+          device_name: string
+          doctor_id: string | null
+          id: string
+          patient_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          created_at?: string
+          device_label?: string | null
+          device_name: string
+          doctor_id?: string | null
+          id?: string
+          patient_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string | null
+          created_at?: string
+          device_label?: string | null
+          device_name?: string
+          doctor_id?: string | null
+          id?: string
+          patient_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devices_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doctor_google_fit: {
         Row: {
           access_token: string
