@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      device_activity: {
+        Row: {
+          body_temperature: number | null
+          created_at: string
+          device_number: number
+          heart_rate: number | null
+          id: string
+          oxygen_level: number | null
+          patient_id: string | null
+          recorded_at: string | null
+          status: string
+          steps: number | null
+          updated_at: string
+        }
+        Insert: {
+          body_temperature?: number | null
+          created_at?: string
+          device_number: number
+          heart_rate?: number | null
+          id?: string
+          oxygen_level?: number | null
+          patient_id?: string | null
+          recorded_at?: string | null
+          status?: string
+          steps?: number | null
+          updated_at?: string
+        }
+        Update: {
+          body_temperature?: number | null
+          created_at?: string
+          device_number?: number
+          heart_rate?: number | null
+          id?: string
+          oxygen_level?: number | null
+          patient_id?: string | null
+          recorded_at?: string | null
+          status?: string
+          steps?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_activity_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       devices: {
         Row: {
           assigned_at: string | null
