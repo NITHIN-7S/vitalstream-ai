@@ -67,7 +67,7 @@ const ReceptionDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [availableDevices, setAvailableDevices] = useState<{id: string; device_name: string; device_label: string | null}[]>([]);
+  const [availableDevices, setAvailableDevices] = useState<{id: string; device_number: number}[]>([]);
   const [isDoctorLoading, setIsDoctorLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
@@ -87,7 +87,7 @@ const ReceptionDashboard = () => {
   const [patientForm, setPatientForm] = useState({
     email: "", name: "", age: "", gender: "", room: "",
     bed_number: "", diagnosis: "", emergency_contact: "",
-    emergency_phone: "", doctor_id: "", device_id: ""
+    emergency_phone: "", doctor_id: "", device_number: ""
   });
 
   const [doctorForm, setDoctorForm] = useState({
@@ -126,11 +126,11 @@ const ReceptionDashboard = () => {
 
   const fetchAvailableDevices = async () => {
     const { data } = await supabase
-      .from("devices")
-      .select("id, device_name, device_label")
-      .eq("status", "available")
+      .from("device_activity")
+      .select("id, device_number")
+      .eq("status", "not_connected")
       .is("patient_id", null)
-      .order("device_name", { ascending: true });
+      .order("device_number", { ascending: true });
     if (data) setAvailableDevices(data);
   };
 
@@ -147,19 +147,28 @@ const ReceptionDashboard = () => {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      // If device was selected, assign it to the patient
-      if (patientForm.device_id && data.patient) {
+      // If device was selected, assign it and generate random readings
+      if (patientForm.device_number && data.patient) {
+        const deviceNum = parseInt(patientForm.device_number);
         await supabase
-          .from("devices")
-          .update({ patient_id: data.patient.id, doctor_id: patientForm.doctor_id || null, status: "connected", assigned_at: new Date().toISOString() })
-          .eq("id", patientForm.device_id);
+          .from("device_activity")
+          .update({
+            patient_id: data.patient.id,
+            status: "connected",
+            heart_rate: Math.floor(60 + Math.random() * 51),
+            oxygen_level: Math.floor(92 + Math.random() * 9),
+            body_temperature: parseFloat((36.0 + Math.random() * 2.5).toFixed(1)),
+            steps: Math.floor(Math.random() * 5001),
+            recorded_at: new Date().toISOString(),
+          })
+          .eq("device_number", deviceNum);
       }
 
       setCredentials(data.credentials);
       setCredentialsDialogType("patient");
       setShowCredentialsDialog(true);
       toast({ title: "Patient Registered!", description: "Credentials generated successfully." });
-      setPatientForm({ email: "", name: "", age: "", gender: "", room: "", bed_number: "", diagnosis: "", emergency_contact: "", emergency_phone: "", doctor_id: "", device_id: "" });
+      setPatientForm({ email: "", name: "", age: "", gender: "", room: "", bed_number: "", diagnosis: "", emergency_contact: "", emergency_phone: "", doctor_id: "", device_number: "" });
       fetchRegisteredPatients();
       fetchAvailableDevices();
     } catch (error: any) {
@@ -339,13 +348,13 @@ const ReceptionDashboard = () => {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="device_id">Assign Device</Label>
-                        <Select value={patientForm.device_id} onValueChange={(value) => setPatientForm({ ...patientForm, device_id: value })}>
+                        <Label htmlFor="device_number">Device Number</Label>
+                        <Select value={patientForm.device_number} onValueChange={(value) => setPatientForm({ ...patientForm, device_number: value })}>
                           <SelectTrigger><SelectValue placeholder="Select Device (optional)" /></SelectTrigger>
                           <SelectContent className="bg-background border">
                             {availableDevices.map((device) => (
-                              <SelectItem key={device.id} value={device.id}>
-                                {device.device_name}{device.device_label ? ` — ${device.device_label}` : ""}
+                              <SelectItem key={device.id} value={String(device.device_number)}>
+                                Device {device.device_number}
                               </SelectItem>
                             ))}
                           </SelectContent>
