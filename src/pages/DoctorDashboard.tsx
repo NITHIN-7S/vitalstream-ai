@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Activity, Bell, Settings, LogOut, Search, Heart, Thermometer, Wind, Users, AlertTriangle, Plus, ChevronRight, RefreshCw, Wifi, User, Briefcase, Phone, Building, Lock, Save, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Activity, Bell, Settings, LogOut, Search, Heart, Thermometer, Wind, Users, AlertTriangle, Plus, ChevronRight, RefreshCw, Wifi, User, Briefcase, Phone, Building, Lock, Save, Eye, EyeOff, Loader2, Menu, X } from "lucide-react";
 import VitalCard from "@/components/cards/VitalCard";
 import PatientCard from "@/components/cards/PatientCard";
 import LiveChart from "@/components/dashboard/LiveChart";
@@ -57,6 +57,7 @@ interface PatientVitals {
 const DoctorDashboard = () => {
   const navigate = useNavigate();
   const [showAlert, setShowAlert] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedPatientVitals, setSelectedPatientVitals] = useState<PatientVitals | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -451,15 +452,71 @@ const DoctorDashboard = () => {
         </div>
       </aside>
 
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+          <motion.div
+            initial={{ x: -280 }}
+            animate={{ x: 0 }}
+            exit={{ x: -280 }}
+            className="absolute left-0 top-0 bottom-0 w-72 bg-background border-r border-border flex flex-col"
+          >
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-7 w-7 text-primary" />
+                <span className="text-lg font-bold">Health<span className="text-primary">Pulse</span></span>
+              </div>
+              <button onClick={() => setMobileMenuOpen(false)}><X className="h-5 w-5" /></button>
+            </div>
+            <nav className="flex-1 p-4 space-y-2">
+              {[
+                { id: "patients" as const, icon: Users, label: "ICU Patients" },
+                { id: "mypatients" as const, icon: Users, label: "My Patients" },
+                { id: "alerts" as const, icon: Bell, label: "Alerts" },
+                { id: "devices" as const, icon: Wifi, label: "Devices" },
+                { id: "settings" as const, icon: Settings, label: "Settings" },
+              ].map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => { setActiveTab(item.id); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+                    activeTab === item.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+            <div className="p-4 border-t border-border">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <span className="text-primary font-semibold">DR</span>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground text-sm">{doctorName}</p>
+                  <p className="text-xs text-muted-foreground">Doctor</p>
+                </div>
+              </div>
+              <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="lg:ml-64 min-h-screen">
         {/* Header */}
         <header className="glass border-b border-border p-4 sticky top-0 z-40">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 flex-1">
-              <div className="lg:hidden">
-                <Activity className="h-8 w-8 text-primary" />
-              </div>
+              <button className="lg:hidden p-2 rounded-lg hover:bg-muted" onClick={() => setMobileMenuOpen(true)}>
+                <Menu className="h-6 w-6" />
+              </button>
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input

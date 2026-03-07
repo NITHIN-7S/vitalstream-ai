@@ -25,7 +25,9 @@ import {
   Building,
   X,
   ChevronLeft,
-  Wifi
+  Wifi,
+  Menu,
+  Settings
 } from "lucide-react";
 import DeviceActivity from "@/components/dashboard/DeviceActivity";
 import {
@@ -67,6 +69,7 @@ const ReceptionDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [availableDevices, setAvailableDevices] = useState<{id: string; device_number: number}[]>([]);
   const [isDoctorLoading, setIsDoctorLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -243,10 +246,67 @@ const ReceptionDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+          <motion.div
+            initial={{ x: -280 }}
+            animate={{ x: 0 }}
+            exit={{ x: -280 }}
+            className="absolute left-0 top-0 bottom-0 w-72 bg-background border-r border-border flex flex-col"
+          >
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-7 w-7 text-primary" />
+                <span className="text-lg font-bold">Health<span className="text-primary">Pulse</span></span>
+              </div>
+              <button onClick={() => setMobileMenuOpen(false)}><X className="h-5 w-5" /></button>
+            </div>
+            <nav className="flex-1 p-4 space-y-2">
+              {[
+                { id: "patients", icon: Users, label: "Register Patient" },
+                { id: "doctors", icon: Stethoscope, label: "Register Doctor" },
+                { id: "devices", icon: Wifi, label: "Device Activity" },
+              ].map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => { setActiveTab(item.id); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+                    activeTab === item.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+            <div className="p-4 border-t border-border">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <ClipboardList className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground text-sm">Receptionist</p>
+                  <p className="text-xs text-muted-foreground">Reception</p>
+                </div>
+              </div>
+              <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Header */}
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <button className="lg:hidden p-2 rounded-lg hover:bg-muted" onClick={() => setMobileMenuOpen(true)}>
+              <Menu className="h-6 w-6" />
+            </button>
             <Activity className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold">
               Health<span className="text-primary">Pulse</span>
