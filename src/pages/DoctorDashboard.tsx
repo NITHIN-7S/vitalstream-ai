@@ -57,6 +57,7 @@ interface PatientVitals {
 const DoctorDashboard = () => {
   const navigate = useNavigate();
   const [showAlert, setShowAlert] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedPatientVitals, setSelectedPatientVitals] = useState<PatientVitals | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
