@@ -69,6 +69,7 @@ const ReceptionDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [availableDevices, setAvailableDevices] = useState<{id: string; device_number: number}[]>([]);
   const [isDoctorLoading, setIsDoctorLoading] = useState(false);
   const [copied, setCopied] = useState(false);

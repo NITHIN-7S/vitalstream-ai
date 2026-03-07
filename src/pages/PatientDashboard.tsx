@@ -36,6 +36,7 @@ const PatientDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<"health" | "reports" | "hospitals" | "settings" | "devices">("health");
   const [patientData, setPatientData] = useState<PatientData>({
     name: "Loading...",
