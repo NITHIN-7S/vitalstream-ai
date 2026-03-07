@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Activity, Bell, Settings, LogOut, Heart, Thermometer, Wind, User, Phone, FileText, MapPin, Loader2, Lock, Eye, EyeOff, Upload, ChevronRight, Download, Trash2, Wifi } from "lucide-react";
+import { Activity, Bell, Settings, LogOut, Heart, Thermometer, Wind, User, Phone, FileText, MapPin, Loader2, Lock, Eye, EyeOff, Upload, ChevronRight, Download, Trash2, Wifi, Menu, X } from "lucide-react";
 import VitalCard from "@/components/cards/VitalCard";
 import LiveChart from "@/components/dashboard/LiveChart";
 import ECGWave from "@/components/animations/ECGWave";

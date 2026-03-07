@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Activity, Bell, Settings, LogOut, Search, Heart, Thermometer, Wind, Users, AlertTriangle, Plus, ChevronRight, RefreshCw, Wifi, User, Briefcase, Phone, Building, Lock, Save, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Activity, Bell, Settings, LogOut, Search, Heart, Thermometer, Wind, Users, AlertTriangle, Plus, ChevronRight, RefreshCw, Wifi, User, Briefcase, Phone, Building, Lock, Save, Eye, EyeOff, Loader2, Menu, X } from "lucide-react";
 import VitalCard from "@/components/cards/VitalCard";
 import PatientCard from "@/components/cards/PatientCard";
 import LiveChart from "@/components/dashboard/LiveChart";

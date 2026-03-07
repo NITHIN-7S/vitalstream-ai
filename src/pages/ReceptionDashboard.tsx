@@ -25,7 +25,9 @@ import {
   Building,
   X,
   ChevronLeft,
-  Wifi
+  Wifi,
+  Menu,
+  Settings
 } from "lucide-react";
 import DeviceActivity from "@/components/dashboard/DeviceActivity";
 import {
