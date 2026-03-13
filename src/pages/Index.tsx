@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Stethoscope, User, ChevronRight, Activity, Shield, Clock, Zap, Heart, Wifi, Cloud, Bell, Users, Lock, CheckCircle2 } from "lucide-react";
+import { Activity, Shield, Clock, Zap, Heart, Cloud, Users, Lock, CheckCircle2, ChevronRight, Stethoscope, User } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ECGWave from "@/components/animations/ECGWave";
@@ -46,12 +45,10 @@ const Index = () => {
       
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center pt-16">
-        {/* Animated Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent animate-pulse" />
         <FloatingParticles count={40} />
         
-        {/* Multiple ECG Waves for depth */}
         <div className="absolute bottom-0 left-0 right-0 h-40 opacity-20">
           <ECGWave className="h-full" speed={2} />
         </div>
@@ -59,7 +56,6 @@ const Index = () => {
           <ECGWave className="h-full" speed={4} />
         </div>
 
-        {/* Animated grid pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,150,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,150,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,black,transparent)]" />
 
         <div className="container mx-auto px-4 relative z-10">
@@ -116,9 +112,7 @@ const Index = () => {
               <span className="text-foreground">Health</span>
               <motion.span 
                 className="text-primary inline-block"
-                animate={{ 
-                  opacity: [0.9, 1, 0.9]
-                }}
+                animate={{ opacity: [0.9, 1, 0.9] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 Pulse
@@ -140,39 +134,14 @@ const Index = () => {
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ delay: 0.6, duration: 0.8 }}
-              className="w-32 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mb-10"
+              className="w-32 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mb-16"
             />
-
-            {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
-            >
-              <Link to="/auth/doctor">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="hero" size="xl" className="gap-2 shadow-glow">
-                    <Stethoscope className="h-5 w-5" />
-                    Get Started
-                  </Button>
-                </motion.div>
-              </Link>
-              <Link to="/auth/patient">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="heroOutline" size="xl" className="gap-2">
-                    <User className="h-5 w-5" />
-                    Patient Login
-                  </Button>
-                </motion.div>
-              </Link>
-            </motion.div>
 
             {/* Animated Stats */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
+              transition={{ delay: 0.7 }}
               className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
             >
               {stats.map((stat, index) => (
@@ -180,7 +149,7 @@ const Index = () => {
                   key={stat.label}
                   initial={{ opacity: 0, scale: 0.8, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ delay: 0.9 + index * 0.1, type: "spring" }}
+                  transition={{ delay: 0.8 + index * 0.1, type: "spring" }}
                   whileHover={{ scale: 1.08, y: -8 }}
                   className="glass rounded-xl p-6 shadow-card group cursor-pointer"
                 >
@@ -221,7 +190,7 @@ const Index = () => {
         </motion.div>
       </section>
 
-      {/* Role Cards Section - Condensed */}
+      {/* Role Cards Section */}
       <section className="py-20 relative">
         <div className="container mx-auto px-4">
           <motion.div
@@ -256,14 +225,12 @@ const Index = () => {
               >
                 <Link to={role.link}>
                   <div className="glass rounded-2xl p-6 shadow-card relative overflow-hidden h-full border border-border/50 hover:border-primary/30 transition-all duration-500">
-                    {/* Animated gradient background */}
                     <motion.div 
                       className={`absolute inset-0 bg-gradient-to-br ${role.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}
                       animate={{ rotate: [0, 360] }}
                       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                     />
                     
-                    {/* Animated icon container */}
                     <motion.div 
                       className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors duration-300"
                       whileHover={{ rotate: [0, -10, 10, 0] }}
@@ -301,7 +268,6 @@ const Index = () => {
             viewport={{ once: true }}
             className="max-w-4xl mx-auto glass rounded-2xl p-8 shadow-elevated relative overflow-hidden"
           >
-            {/* Animated background pattern */}
             <div className="absolute inset-0 opacity-5">
               <motion.div
                 animate={{ rotate: 360 }}
