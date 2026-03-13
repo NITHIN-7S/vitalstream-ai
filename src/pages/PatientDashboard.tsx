@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Activity, Bell, Settings, LogOut, Heart, Thermometer, Wind, User, Phone, FileText, MapPin, Loader2, Lock, Eye, EyeOff, Upload, ChevronRight, Download, Trash2, Wifi, Menu, X } from "lucide-react";
+import { Activity, Bell, Settings, LogOut, Heart, Thermometer, User, Phone, FileText, MapPin, Loader2, Lock, Eye, EyeOff, Upload, Download, Trash2, Menu, X } from "lucide-react";
 import VitalCard from "@/components/cards/VitalCard";
 import LiveChart from "@/components/dashboard/LiveChart";
 import ECGWave from "@/components/animations/ECGWave";
@@ -12,7 +12,6 @@ import ContactForm from "@/components/dashboard/ContactForm";
 import NearbyHospitalsMap from "@/components/dashboard/NearbyHospitalsMap";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import DeviceActivity from "@/components/dashboard/DeviceActivity";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +36,7 @@ const PatientDashboard = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<"health" | "reports" | "hospitals" | "settings" | "devices">("health");
+  const [activeSection, setActiveSection] = useState<"health" | "reports" | "hospitals" | "settings">("health");
   const [patientData, setPatientData] = useState<PatientData>({
     name: "Loading...",
     age: 0,
@@ -66,7 +65,6 @@ const PatientDashboard = () => {
   const vitals = {
     heartRate: { value: 78, status: "normal" as const, trend: "stable" as const },
     temperature: { value: 37.2, status: "normal" as const, trend: "stable" as const },
-    oxygenLevel: { value: 98, status: "normal" as const, trend: "up" as const },
     bloodPressure: { systolic: 120, diastolic: 80, status: "normal" as const },
   };
 
@@ -118,7 +116,6 @@ const PatientDashboard = () => {
         return;
       }
 
-      // Fetch patient data
       const { data: patient, error: patientError } = await supabase
         .from("patients")
         .select("*")
@@ -126,15 +123,10 @@ const PatientDashboard = () => {
         .single();
 
       if (patientError || !patient) {
-        toast({
-          title: "Error",
-          description: "Could not load patient data",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: "Could not load patient data", variant: "destructive" });
         return;
       }
 
-      // Fetch doctor info if assigned
       let doctorInfo = { name: null as string | null, specialty: null as string | null, phone: null as string | null };
       if (patient.doctor_id) {
         const { data: doctor } = await supabase
@@ -144,11 +136,7 @@ const PatientDashboard = () => {
           .single();
         
         if (doctor) {
-          doctorInfo = {
-            name: doctor.full_name,
-            specialty: doctor.specialization,
-            phone: doctor.phone,
-          };
+          doctorInfo = { name: doctor.full_name, specialty: doctor.specialization, phone: doctor.phone };
         }
       }
 
@@ -178,66 +166,35 @@ const PatientDashboard = () => {
     if (patientData.doctorPhone) {
       window.location.href = `tel:${patientData.doctorPhone}`;
     } else {
-      toast({
-        title: "No phone number",
-        description: "Doctor's phone number is not available",
-        variant: "destructive",
-      });
+      toast({ title: "No phone number", description: "Doctor's phone number is not available", variant: "destructive" });
     }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "New passwords do not match",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "New passwords do not match", variant: "destructive" });
       return;
     }
-
     if (passwordForm.newPassword.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
       return;
     }
-
     setIsChangingPassword(true);
-
     try {
-      // Update password in Supabase Auth
-      const { error } = await supabase.auth.updateUser({
-        password: passwordForm.newPassword
-      });
-
+      const { error } = await supabase.auth.updateUser({ password: passwordForm.newPassword });
       if (error) throw error;
 
-      // Also update the stored_password in patients table for receptionist visibility
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase
-          .from("patients")
-          .update({ stored_password: passwordForm.newPassword })
-          .eq("user_id", user.id);
+        await supabase.from("patients").update({ stored_password: passwordForm.newPassword }).eq("user_id", user.id);
       }
 
-      toast({
-        title: "Password Changed",
-        description: "Your password has been updated successfully",
-      });
+      toast({ title: "Password Changed", description: "Your password has been updated successfully" });
       setShowPasswordDialog(false);
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to change password",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Failed to change password", variant: "destructive" });
     } finally {
       setIsChangingPassword(false);
     }
@@ -246,48 +203,28 @@ const PatientDashboard = () => {
   const handleUploadReport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reportFile) {
-      toast({
-        title: "Error",
-        description: "Please select a file to upload",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Please select a file to upload", variant: "destructive" });
       return;
     }
-
     setIsUploadingReport(true);
-    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Create unique filename with timestamp
       const fileExt = reportFile.name.split('.').pop();
       const fileName = `${Date.now()}_${reportDescription.replace(/\s+/g, '_') || 'report'}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('medical-reports')
-        .upload(filePath, reportFile);
-
+      const { error: uploadError } = await supabase.storage.from('medical-reports').upload(filePath, reportFile);
       if (uploadError) throw uploadError;
 
-      // Refresh reports list
       await fetchReports();
-      
       setReportFile(null);
       setReportDescription("");
-      toast({
-        title: "Report Uploaded",
-        description: "Your medical report has been uploaded successfully",
-      });
+      toast({ title: "Report Uploaded", description: "Your medical report has been uploaded successfully" });
     } catch (error: any) {
       console.error("Upload error:", error);
-      toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload report",
-        variant: "destructive",
-      });
+      toast({ title: "Upload Failed", description: error.message || "Failed to upload report", variant: "destructive" });
     } finally {
       setIsUploadingReport(false);
     }
@@ -295,35 +232,19 @@ const PatientDashboard = () => {
 
   const handleDeleteReport = async (reportUrl: string) => {
     try {
-      const { error } = await supabase.storage
-        .from('medical-reports')
-        .remove([reportUrl]);
-
+      const { error } = await supabase.storage.from('medical-reports').remove([reportUrl]);
       if (error) throw error;
-
       await fetchReports();
-      toast({
-        title: "Report Deleted",
-        description: "Your report has been deleted successfully",
-      });
+      toast({ title: "Report Deleted", description: "Your report has been deleted successfully" });
     } catch (error: any) {
-      toast({
-        title: "Delete Failed",
-        description: error.message || "Failed to delete report",
-        variant: "destructive",
-      });
+      toast({ title: "Delete Failed", description: error.message || "Failed to delete report", variant: "destructive" });
     }
   };
 
   const handleDownloadReport = async (reportUrl: string, fileName: string) => {
     try {
-      const { data, error } = await supabase.storage
-        .from('medical-reports')
-        .download(reportUrl);
-
+      const { data, error } = await supabase.storage.from('medical-reports').download(reportUrl);
       if (error) throw error;
-
-      // Create download link
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
@@ -333,11 +254,7 @@ const PatientDashboard = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error: any) {
-      toast({
-        title: "Download Failed",
-        description: error.message || "Failed to download report",
-        variant: "destructive",
-      });
+      toast({ title: "Download Failed", description: error.message || "Failed to download report", variant: "destructive" });
     }
   };
 
@@ -349,11 +266,17 @@ const PatientDashboard = () => {
     );
   }
 
+  const navItems = [
+    { id: "health" as const, icon: Activity, label: "My Health" },
+    { id: "reports" as const, icon: FileText, label: "Reports" },
+    { id: "hospitals" as const, icon: MapPin, label: "Nearby Hospitals" },
+    { id: "settings" as const, icon: Settings, label: "Settings" },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 bottom-0 w-64 glass border-r border-border hidden lg:flex flex-col">
-        {/* Logo */}
         <div className="p-6 border-b border-border">
           <Link to="/" className="flex items-center gap-2">
             <Activity className="h-8 w-8 text-primary" />
@@ -363,56 +286,21 @@ const PatientDashboard = () => {
           </Link>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2">
-          <button
-            onClick={() => setActiveSection("health")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-              activeSection === "health" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <Activity className="h-5 w-5" />
-            My Health
-          </button>
-          <button
-            onClick={() => setActiveSection("reports")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-              activeSection === "reports" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <FileText className="h-5 w-5" />
-            Reports
-          </button>
-          <button
-            onClick={() => setActiveSection("hospitals")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-              activeSection === "hospitals" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <MapPin className="h-5 w-5" />
-            Nearby Hospitals
-          </button>
-          <button
-            onClick={() => setActiveSection("devices")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-              activeSection === "devices" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <Wifi className="h-5 w-5" />
-            My Device
-          </button>
-          <button
-            onClick={() => setActiveSection("settings")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-              activeSection === "settings" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <Settings className="h-5 w-5" />
-            Settings
-          </button>
+          {navItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveSection(item.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+                activeSection === item.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <item.icon className="h-5 w-5" />
+              {item.label}
+            </button>
+          ))}
         </nav>
 
-        {/* User */}
         <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
@@ -448,13 +336,7 @@ const PatientDashboard = () => {
               <button onClick={() => setMobileMenuOpen(false)}><X className="h-5 w-5" /></button>
             </div>
             <nav className="flex-1 p-4 space-y-2">
-              {[
-                { id: "health" as const, icon: Activity, label: "My Health" },
-                { id: "reports" as const, icon: FileText, label: "Reports" },
-                { id: "hospitals" as const, icon: MapPin, label: "Nearby Hospitals" },
-                { id: "devices" as const, icon: Wifi, label: "My Device" },
-                { id: "settings" as const, icon: Settings, label: "Settings" },
-              ].map(item => (
+              {navItems.map(item => (
                 <button
                   key={item.id}
                   onClick={() => { setActiveSection(item.id); setMobileMenuOpen(false); }}
@@ -488,7 +370,6 @@ const PatientDashboard = () => {
 
       {/* Main Content */}
       <main className="lg:ml-64 min-h-screen">
-        {/* Header */}
         <header className="glass border-b border-border p-4 sticky top-0 z-40">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -500,7 +381,6 @@ const PatientDashboard = () => {
                 {activeSection === "reports" && "Medical Reports"}
                 {activeSection === "hospitals" && "Nearby Hospitals"}
                 {activeSection === "settings" && "Settings"}
-                {activeSection === "devices" && "My Device"}
               </h1>
             </div>
             <div className="flex items-center gap-3">
@@ -549,14 +429,14 @@ const PatientDashboard = () => {
                 </div>
               </motion.div>
 
-              {/* Current Vitals */}
+              {/* Current Vitals - without Oxygen Level */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
                 <h2 className="text-xl font-semibold text-foreground mb-4">Current Vitals</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <VitalCard
                     icon={Heart}
                     label="Heart Rate"
@@ -573,14 +453,6 @@ const PatientDashboard = () => {
                     unit="°C"
                     status={vitals.temperature.status}
                     trend={vitals.temperature.trend}
-                  />
-                  <VitalCard
-                    icon={Wind}
-                    label="Oxygen Level"
-                    value={vitals.oxygenLevel.value}
-                    unit="%"
-                    status={vitals.oxygenLevel.status}
-                    trend={vitals.oxygenLevel.trend}
                   />
                   <motion.div
                     whileHover={{ scale: 1.02, y: -4 }}
@@ -605,68 +477,27 @@ const PatientDashboard = () => {
                 </div>
               </motion.div>
 
-              {/* Charts & Doctor Info */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="lg:col-span-2"
-                >
-                  <LiveChart
-                    title="Heart Rate History (24h)"
-                    dataKey="heartRate"
-                    color="hsl(var(--destructive))"
-                    unit="BPM"
-                    minValue={60}
-                    maxValue={100}
-                  />
-                </motion.div>
-
-                {/* Doctor Info */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="glass rounded-xl p-6 shadow-card"
-                >
-                  <h3 className="font-semibold text-foreground mb-4">Your Doctor</h3>
-                  {patientData.doctor ? (
-                    <>
-                      <div className="flex items-center gap-4 mb-6">
-                        <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
-                          <span className="text-lg font-bold text-primary">
-                            {patientData.doctor.replace('Dr. ', '').split(' ').map(n => n[0]).join('')}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground">{patientData.doctor}</p>
-                          <p className="text-sm text-muted-foreground">{patientData.doctorSpecialty || "General Physician"}</p>
-                          {patientData.doctorPhone && (
-                            <p className="text-xs text-primary mt-1">{patientData.doctorPhone}</p>
-                          )}
-                        </div>
-                      </div>
-                      <Button variant="hero" className="w-full gap-2" onClick={handleCallDoctor}>
-                        <Phone className="h-4 w-4" />
-                        Call Now
-                      </Button>
-                    </>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No doctor assigned yet</p>
-                      <p className="text-sm">Please contact reception</p>
-                    </div>
-                  )}
-                </motion.div>
-              </div>
+              {/* Chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <LiveChart
+                  title="Heart Rate History (24h)"
+                  dataKey="heartRate"
+                  color="hsl(var(--destructive))"
+                  unit="BPM"
+                  minValue={60}
+                  maxValue={100}
+                />
+              </motion.div>
 
               {/* Medications */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.3 }}
                 className="glass rounded-xl p-6 shadow-card"
               >
                 <div className="flex items-center justify-between mb-4">
@@ -674,15 +505,10 @@ const PatientDashboard = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {medications.map((med) => (
-                    <div
-                      key={med.name}
-                      className="flex items-center justify-between p-4 rounded-lg bg-secondary/50"
-                    >
+                    <div key={med.name} className="flex items-center justify-between p-4 rounded-lg bg-secondary/50">
                       <div>
                         <p className="font-medium text-foreground">{med.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {med.dosage} • {med.frequency}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{med.dosage} • {med.frequency}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-medium text-primary">Next: {med.nextDose}</p>
@@ -696,7 +522,7 @@ const PatientDashboard = () => {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
+                transition={{ delay: 0.4 }}
                 className="glass rounded-xl p-6 shadow-card"
               >
                 <h3 className="font-semibold text-foreground mb-4">Live ECG Monitor</h3>
@@ -709,70 +535,29 @@ const PatientDashboard = () => {
 
           {activeSection === "reports" && (
             <>
-              {/* Upload Report */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass rounded-2xl p-6 shadow-card"
-              >
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-2xl p-6 shadow-card">
                 <h3 className="font-semibold text-foreground mb-4">Upload Medical Report</h3>
                 <form onSubmit={handleUploadReport} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="report-file">Select File</Label>
-                    <div className="flex items-center gap-4">
-                      <Input
-                        id="report-file"
-                        type="file"
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                        onChange={(e) => setReportFile(e.target.files?.[0] || null)}
-                        className="flex-1"
-                      />
-                    </div>
+                    <Input id="report-file" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => setReportFile(e.target.files?.[0] || null)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="report-desc">Description (Optional)</Label>
-                    <Input
-                      id="report-desc"
-                      value={reportDescription}
-                      onChange={(e) => setReportDescription(e.target.value)}
-                      placeholder="e.g., Blood Test Report, X-Ray..."
-                    />
+                    <Input id="report-desc" value={reportDescription} onChange={(e) => setReportDescription(e.target.value)} placeholder="e.g., Blood Test Report, X-Ray..." />
                   </div>
                   <Button type="submit" disabled={!reportFile || isUploadingReport}>
-                    {isUploadingReport ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Report
-                      </>
-                    )}
+                    {isUploadingReport ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</>) : (<><Upload className="h-4 w-4 mr-2" />Upload Report</>)}
                   </Button>
                 </form>
               </motion.div>
 
-              {/* Reports List */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="glass rounded-2xl p-6 shadow-card"
-              >
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass rounded-2xl p-6 shadow-card">
                 <h3 className="font-semibold text-foreground mb-4">Your Reports</h3>
                 {isLoadingReports ? (
-                  <div className="text-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-                    <p className="text-muted-foreground mt-2">Loading reports...</p>
-                  </div>
+                  <div className="text-center py-12"><Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" /><p className="text-muted-foreground mt-2">Loading reports...</p></div>
                 ) : reports.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No reports uploaded yet</p>
-                    <p className="text-sm">Upload your medical reports to keep track of them</p>
-                  </div>
+                  <div className="text-center py-12 text-muted-foreground"><FileText className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>No reports uploaded yet</p></div>
                 ) : (
                   <div className="space-y-3">
                     {reports.map((report) => (
@@ -785,22 +570,8 @@ const PatientDashboard = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleDownloadReport(report.url, report.name)}
-                            className="text-primary hover:text-primary"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleDeleteReport(report.url)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDownloadReport(report.url, report.name)} className="text-primary hover:text-primary"><Download className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteReport(report.url)} className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </div>
                     ))}
@@ -812,40 +583,16 @@ const PatientDashboard = () => {
 
           {activeSection === "hospitals" && (
             <>
-              {/* Nearby Hospitals Map */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <NearbyHospitalsMap />
-              </motion.div>
-
-              {/* Hospital Support Contact */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <ContactForm />
-              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}><NearbyHospitalsMap /></motion.div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}><ContactForm /></motion.div>
             </>
-          )}
-
-          {activeSection === "devices" && (
-            <DeviceActivity role="patient" />
           )}
 
           {activeSection === "settings" && (
             <>
-              {/* Account Settings */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass rounded-2xl p-6 shadow-card"
-              >
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-2xl p-6 shadow-card">
                 <h3 className="font-semibold text-foreground mb-6">Account Settings</h3>
                 
-                {/* Profile Info */}
                 <div className="space-y-4 mb-8">
                   <div className="flex items-center gap-4 p-4 rounded-lg bg-secondary/50">
                     <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
@@ -859,7 +606,6 @@ const PatientDashboard = () => {
                   </div>
                 </div>
 
-                {/* Security Settings */}
                 <div className="space-y-4">
                   <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Security</h4>
                   <div className="p-4 rounded-lg border border-border bg-background">
@@ -878,36 +624,6 @@ const PatientDashboard = () => {
                       </Button>
                     </div>
                   </div>
-                </div>
-
-                {/* Doctor Info in Settings */}
-                <div className="space-y-4 mt-8">
-                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Your Doctor</h4>
-                  {patientData.doctor ? (
-                    <div className="p-4 rounded-lg border border-border bg-background">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                          <span className="text-lg font-bold text-primary">
-                            {patientData.doctor.replace('Dr. ', '').split(' ').map(n => n[0]).join('')}
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-foreground">{patientData.doctor}</p>
-                          <p className="text-sm text-muted-foreground">{patientData.doctorSpecialty || "General Physician"}</p>
-                        </div>
-                        {patientData.doctorPhone && (
-                          <Button variant="hero" size="sm" onClick={handleCallDoctor}>
-                            <Phone className="h-4 w-4 mr-2" />
-                            Call
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-4 rounded-lg border border-border bg-background text-center text-muted-foreground">
-                      No doctor assigned yet
-                    </div>
-                  )}
                 </div>
               </motion.div>
             </>
@@ -942,11 +658,7 @@ const PatientDashboard = () => {
                   onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
+                <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
@@ -970,23 +682,9 @@ const PatientDashboard = () => {
 
             <div className="flex gap-2 pt-4">
               <Button type="submit" className="flex-1" disabled={isChangingPassword}>
-                {isChangingPassword ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  "Update Password"
-                )}
+                {isChangingPassword ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Updating...</>) : "Update Password"}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowPasswordDialog(false);
-                  setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-                }}
-              >
+              <Button type="button" variant="outline" onClick={() => { setShowPasswordDialog(false); setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" }); }}>
                 Cancel
               </Button>
             </div>
