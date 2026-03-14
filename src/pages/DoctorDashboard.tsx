@@ -227,6 +227,22 @@ const DoctorDashboard = () => {
     setIsModalOpen(true);
 
     try {
+      // Check if a device is connected to this patient
+      const { data: deviceData } = await supabase
+        .from("device_activity")
+        .select("id, heart_rate, oxygen_level, body_temperature, steps")
+        .eq("patient_id", patient.id)
+        .eq("status", "connected")
+        .limit(1)
+        .maybeSingle();
+
+      if (!deviceData) {
+        // No device connected - don't show vitals
+        setSelectedPatientVitals(null);
+        return;
+      }
+
+      // Device is connected - fetch vitals
       const { data, error } = await supabase
         .from("patient_vitals")
         .select("*")
@@ -248,12 +264,13 @@ const DoctorDashboard = () => {
           respiratoryRate: data.respiratory_rate || 0,
         });
       } else {
+        // Device connected but no vitals recorded yet - show device readings
         setSelectedPatientVitals({
-          heartRate: Math.floor(60 + Math.random() * 40),
+          heartRate: deviceData.heart_rate || Math.floor(60 + Math.random() * 40),
           bloodPressureSystolic: Math.floor(110 + Math.random() * 30),
           bloodPressureDiastolic: Math.floor(70 + Math.random() * 20),
-          oxygenLevel: Math.floor(94 + Math.random() * 6),
-          temperature: Number((36 + Math.random() * 2).toFixed(1)),
+          oxygenLevel: deviceData.oxygen_level || Math.floor(94 + Math.random() * 6),
+          temperature: deviceData.body_temperature || Number((36 + Math.random() * 2).toFixed(1)),
           glucoseLevel: Math.floor(80 + Math.random() * 60),
           respiratoryRate: Math.floor(12 + Math.random() * 8),
         });
@@ -277,7 +294,7 @@ const DoctorDashboard = () => {
     { id: "mypatients" as const, icon: Users, label: "My Patients", badge: myPatients.length },
     { id: "devices" as const, icon: Wifi, label: "Devices" },
     { id: "alerts" as const, icon: Bell, label: "Alerts" },
-    { id: "settings" as const, icon: Settings, label: "Settings" },
+    { id: "settings" as const, icon: User, label: "Profile" },
   ];
 
   return (

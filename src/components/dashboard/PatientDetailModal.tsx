@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Thermometer, Wind, Droplets, Activity, User, Phone, Calendar, MapPin, FileText, Download, Loader2 } from "lucide-react";
+import { X, Heart, Thermometer, Wind, Droplets, Activity, User, Phone, Calendar, MapPin, FileText, Download, Loader2, Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ECGWave from "@/components/animations/ECGWave";
 import { supabase } from "@/integrations/supabase/client";
@@ -144,7 +144,7 @@ const PatientDetailModal = ({ isOpen, onClose, patient, vitals }: PatientDetailM
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[800px] md:max-h-[90vh] bg-card rounded-2xl shadow-elevated z-50 overflow-hidden flex flex-col"
+            className="fixed inset-4 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-[800px] max-h-[90vh] bg-card rounded-2xl shadow-elevated z-50 overflow-hidden flex flex-col"
           >
             {/* Header */}
             <div className={`p-6 border-b border-border ${config.bg}`}>
@@ -201,7 +201,8 @@ const PatientDetailModal = ({ isOpen, onClose, patient, vitals }: PatientDetailM
                 </div>
               )}
 
-              {/* Vitals Grid */}
+              {/* Vitals Grid - only shown if vitals exist (device connected) */}
+              {vitals ? (
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-4">Current Vitals</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -249,6 +250,13 @@ const PatientDetailModal = ({ isOpen, onClose, patient, vitals }: PatientDetailM
                   />
                 </div>
               </div>
+              ) : (
+                <div className="text-center py-8 rounded-xl bg-muted/50 border border-border">
+                  <Wifi className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+                  <p className="text-muted-foreground font-medium">No Device Connected</p>
+                  <p className="text-sm text-muted-foreground mt-1">Vitals will appear once an IoT device is assigned</p>
+                </div>
+              )}
 
               {/* Patient Info */}
               <div>
