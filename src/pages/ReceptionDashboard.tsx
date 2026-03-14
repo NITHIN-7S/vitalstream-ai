@@ -37,6 +37,11 @@ interface ConnectedDevice {
   body_temperature: number | null; steps: number | null;
 }
 
+interface DischargedPatient {
+  id: string; name: string; email: string | null; room: string;
+  discharged_at: string;
+}
+
 const ReceptionDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
