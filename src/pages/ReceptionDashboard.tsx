@@ -108,7 +108,7 @@ const ReceptionDashboard = () => {
   const fetchRegisteredPatients = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("patients").select("id, name, email, room, created_at, password_given, stored_password, doctor_id").eq("registered_by", user.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("patients").select("id, name, email, room, created_at, password_given, stored_password, doctor_id").eq("registered_by", user.id).eq("is_discharged", false).order("created_at", { ascending: false });
     if (data) setRegisteredPatients(data as RegisteredPatient[]);
   };
 
