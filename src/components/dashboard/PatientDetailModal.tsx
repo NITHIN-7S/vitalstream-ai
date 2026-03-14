@@ -201,7 +201,8 @@ const PatientDetailModal = ({ isOpen, onClose, patient, vitals }: PatientDetailM
                 </div>
               )}
 
-              {/* Vitals Grid */}
+              {/* Vitals Grid - only shown if vitals exist (device connected) */}
+              {vitals ? (
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-4">Current Vitals</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
