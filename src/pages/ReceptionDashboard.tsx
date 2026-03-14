@@ -37,6 +37,11 @@ interface ConnectedDevice {
   body_temperature: number | null; steps: number | null;
 }
 
+interface DischargedPatient {
+  id: string; name: string; email: string | null; room: string;
+  discharged_at: string;
+}
+
 const ReceptionDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -65,6 +70,7 @@ const ReceptionDashboard = () => {
     patientName: "", deviceNumber: "", doctorName: "", joiningDate: "", leavingDate: ""
   });
   const [isDischarging, setIsDischarging] = useState(false);
+  const [dischargedPatients, setDischargedPatients] = useState<DischargedPatient[]>([]);
 
   // New device state
   const [isCreatingDevice, setIsCreatingDevice] = useState(false);
@@ -86,6 +92,7 @@ const ReceptionDashboard = () => {
     fetchRegisteredPatients();
     fetchAvailableDevices();
     fetchConnectedDevices();
+    fetchDischargedPatients();
   }, []);
 
   const checkAuth = async () => {
@@ -101,7 +108,7 @@ const ReceptionDashboard = () => {
   const fetchRegisteredPatients = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("patients").select("id, name, email, room, created_at, password_given, stored_password, doctor_id").eq("registered_by", user.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("patients").select("id, name, email, room, created_at, password_given, stored_password, doctor_id").eq("registered_by", user.id).eq("is_discharged", false).order("created_at", { ascending: false });
     if (data) setRegisteredPatients(data as RegisteredPatient[]);
   };
 
@@ -113,6 +120,11 @@ const ReceptionDashboard = () => {
   const fetchConnectedDevices = async () => {
     const { data } = await supabase.from("device_activity").select("*").eq("status", "connected").order("device_number", { ascending: true });
     if (data) setConnectedDevices(data as ConnectedDevice[]);
+  };
+
+  const fetchDischargedPatients = async () => {
+    const { data } = await supabase.from("patients").select("id, name, email, room, discharged_at").eq("is_discharged", true).order("discharged_at", { ascending: false });
+    if (data) setDischargedPatients(data as DischargedPatient[]);
   };
 
   const handleLogout = async () => {
@@ -232,15 +244,24 @@ const ReceptionDashboard = () => {
     }
   };
 
-  const handleGenerateDischarge = () => {
+  const handleGenerateDischarge = async () => {
     if (!dischargeForm.patientName || !dischargeForm.joiningDate || !dischargeForm.leavingDate) {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
     }
     setIsDischarging(true);
     
-    // Generate discharge sheet as printable content
-    const dischargeContent = `
+    try {
+      // Call edge function to ban user, unassign doctor, disconnect device
+      const { data, error } = await supabase.functions.invoke("discharge-patient", {
+        body: { patientName: dischargeForm.patientName, deviceNumber: dischargeForm.deviceNumber }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      // Generate discharge sheet as printable content
+      const dischargeContent = `
 DISCHARGE SUMMARY
 ==========================================
 Hospital: HealthPulse Medical Center
@@ -256,21 +277,31 @@ Duration of Stay: ${Math.ceil((new Date(dischargeForm.leavingDate).getTime() - n
 
 ==========================================
 This is a computer-generated discharge summary.
-    `.trim();
+      `.trim();
 
-    const blob = new Blob([dischargeContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `discharge_${dischargeForm.patientName.replace(/\s+/g, '_')}_${Date.now()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const blob = new Blob([dischargeContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `discharge_${dischargeForm.patientName.replace(/\s+/g, '_')}_${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-    toast({ title: "Discharge Sheet Generated", description: "The discharge summary has been downloaded." });
-    setDischargeForm({ patientName: "", deviceNumber: "", doctorName: "", joiningDate: "", leavingDate: "" });
-    setIsDischarging(false);
+      toast({ title: "Patient Discharged", description: "Discharge summary downloaded. Patient login has been disabled." });
+      setDischargeForm({ patientName: "", deviceNumber: "", doctorName: "", joiningDate: "", leavingDate: "" });
+      
+      // Refresh all data
+      fetchRegisteredPatients();
+      fetchAvailableDevices();
+      fetchConnectedDevices();
+      fetchDischargedPatients();
+    } catch (error: any) {
+      toast({ title: "Discharge Failed", description: error.message || "Failed to discharge patient", variant: "destructive" });
+    } finally {
+      setIsDischarging(false);
+    }
   };
 
   const handleCreateNewDevice = async () => {
@@ -543,11 +574,39 @@ This is a computer-generated discharge summary.
                         </div>
                       </div>
                       <Button onClick={handleGenerateDischarge} className="w-full" disabled={isDischarging}>
-                        {isDischarging ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating...</>) : (<><FileText className="h-4 w-4 mr-2" />Generate Discharge Sheet</>)}
+                        {isDischarging ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Discharging...</>) : (<><FileText className="h-4 w-4 mr-2" />Discharge Patient</>)}
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Discharged Patients List */}
+                {dischargedPatients.length > 0 && (
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-muted-foreground" />Discharged Patients</CardTitle>
+                      <CardDescription>Patients who have been discharged and can no longer login</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {dischargedPatients.map((patient) => (
+                          <div key={patient.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border border-border">
+                            <div>
+                              <p className="font-medium text-foreground">{patient.name}</p>
+                              <p className="text-sm text-muted-foreground">{patient.email || 'N/A'} • Room {patient.room}</p>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded-full">Discharged</span>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {patient.discharged_at ? new Date(patient.discharged_at).toLocaleDateString() : ''}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </motion.div>
             </TabsContent>
 
