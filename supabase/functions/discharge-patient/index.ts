@@ -25,6 +25,7 @@ Deno.serve(async (req) => {
     }
 
     const trimmedName = patientName.trim();
+    console.log("Looking for patient:", trimmedName);
 
     // Find the patient by name (case-insensitive, not yet discharged)
     const { data: patient, error: patientError } = await supabaseAdmin
@@ -34,6 +35,8 @@ Deno.serve(async (req) => {
       .eq("is_discharged", false)
       .limit(1)
       .maybeSingle();
+
+    console.log("Query result:", JSON.stringify({ patient, patientError }));
 
     if (patientError || !patient) {
       return new Response(JSON.stringify({ error: "Patient not found or already discharged" }), {
