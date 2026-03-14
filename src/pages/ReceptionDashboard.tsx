@@ -122,6 +122,11 @@ const ReceptionDashboard = () => {
     if (data) setConnectedDevices(data as ConnectedDevice[]);
   };
 
+  const fetchDischargedPatients = async () => {
+    const { data } = await supabase.from("patients").select("id, name, email, room, discharged_at").eq("is_discharged", true).order("discharged_at", { ascending: false });
+    if (data) setDischargedPatients(data as DischargedPatient[]);
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
