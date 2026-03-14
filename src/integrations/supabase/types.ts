@@ -317,12 +317,14 @@ export type Database = {
           bed_number: string | null
           created_at: string | null
           diagnosis: string | null
+          discharged_at: string | null
           doctor_id: string | null
           email: string | null
           emergency_contact: string | null
           emergency_phone: string | null
           gender: string | null
           id: string
+          is_discharged: boolean | null
           is_icu: boolean | null
           name: string
           password_given: boolean | null
@@ -339,12 +341,14 @@ export type Database = {
           bed_number?: string | null
           created_at?: string | null
           diagnosis?: string | null
+          discharged_at?: string | null
           doctor_id?: string | null
           email?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
           gender?: string | null
           id?: string
+          is_discharged?: boolean | null
           is_icu?: boolean | null
           name: string
           password_given?: boolean | null
@@ -361,12 +365,14 @@ export type Database = {
           bed_number?: string | null
           created_at?: string | null
           diagnosis?: string | null
+          discharged_at?: string | null
           doctor_id?: string | null
           email?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
           gender?: string | null
           id?: string
+          is_discharged?: boolean | null
           is_icu?: boolean | null
           name?: string
           password_given?: boolean | null
