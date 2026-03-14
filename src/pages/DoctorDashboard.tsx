@@ -277,7 +277,7 @@ const DoctorDashboard = () => {
     { id: "mypatients" as const, icon: Users, label: "My Patients", badge: myPatients.length },
     { id: "devices" as const, icon: Wifi, label: "Devices" },
     { id: "alerts" as const, icon: Bell, label: "Alerts" },
-    { id: "settings" as const, icon: Settings, label: "Settings" },
+    { id: "settings" as const, icon: User, label: "Profile" },
   ];
 
   return (
