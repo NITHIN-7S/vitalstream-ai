@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Thermometer, Wind, Droplets, Activity, User, Phone, Calendar, MapPin, FileText, Download, Loader2 } from "lucide-react";
+import { X, Heart, Thermometer, Wind, Droplets, Activity, User, Phone, Calendar, MapPin, FileText, Download, Loader2, Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ECGWave from "@/components/animations/ECGWave";
 import { supabase } from "@/integrations/supabase/client";
