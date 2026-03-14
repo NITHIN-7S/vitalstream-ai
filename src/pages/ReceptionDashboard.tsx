@@ -92,6 +92,7 @@ const ReceptionDashboard = () => {
     fetchRegisteredPatients();
     fetchAvailableDevices();
     fetchConnectedDevices();
+    fetchDischargedPatients();
   }, []);
 
   const checkAuth = async () => {
