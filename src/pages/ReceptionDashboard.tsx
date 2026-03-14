@@ -574,11 +574,39 @@ This is a computer-generated discharge summary.
                         </div>
                       </div>
                       <Button onClick={handleGenerateDischarge} className="w-full" disabled={isDischarging}>
-                        {isDischarging ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating...</>) : (<><FileText className="h-4 w-4 mr-2" />Generate Discharge Sheet</>)}
+                        {isDischarging ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Discharging...</>) : (<><FileText className="h-4 w-4 mr-2" />Discharge Patient</>)}
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Discharged Patients List */}
+                {dischargedPatients.length > 0 && (
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-muted-foreground" />Discharged Patients</CardTitle>
+                      <CardDescription>Patients who have been discharged and can no longer login</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {dischargedPatients.map((patient) => (
+                          <div key={patient.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border border-border">
+                            <div>
+                              <p className="font-medium text-foreground">{patient.name}</p>
+                              <p className="text-sm text-muted-foreground">{patient.email || 'N/A'} • Room {patient.room}</p>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded-full">Discharged</span>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {patient.discharged_at ? new Date(patient.discharged_at).toLocaleDateString() : ''}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </motion.div>
             </TabsContent>
 
