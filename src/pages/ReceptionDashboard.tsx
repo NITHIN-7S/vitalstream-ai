@@ -244,15 +244,24 @@ const ReceptionDashboard = () => {
     }
   };
 
-  const handleGenerateDischarge = () => {
+  const handleGenerateDischarge = async () => {
     if (!dischargeForm.patientName || !dischargeForm.joiningDate || !dischargeForm.leavingDate) {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
     }
     setIsDischarging(true);
     
-    // Generate discharge sheet as printable content
-    const dischargeContent = `
+    try {
+      // Call edge function to ban user, unassign doctor, disconnect device
+      const { data, error } = await supabase.functions.invoke("discharge-patient", {
+        body: { patientName: dischargeForm.patientName, deviceNumber: dischargeForm.deviceNumber }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      // Generate discharge sheet as printable content
+      const dischargeContent = `
 DISCHARGE SUMMARY
 ==========================================
 Hospital: HealthPulse Medical Center
@@ -268,21 +277,31 @@ Duration of Stay: ${Math.ceil((new Date(dischargeForm.leavingDate).getTime() - n
 
 ==========================================
 This is a computer-generated discharge summary.
-    `.trim();
+      `.trim();
 
-    const blob = new Blob([dischargeContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `discharge_${dischargeForm.patientName.replace(/\s+/g, '_')}_${Date.now()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const blob = new Blob([dischargeContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `discharge_${dischargeForm.patientName.replace(/\s+/g, '_')}_${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-    toast({ title: "Discharge Sheet Generated", description: "The discharge summary has been downloaded." });
-    setDischargeForm({ patientName: "", deviceNumber: "", doctorName: "", joiningDate: "", leavingDate: "" });
-    setIsDischarging(false);
+      toast({ title: "Patient Discharged", description: "Discharge summary downloaded. Patient login has been disabled." });
+      setDischargeForm({ patientName: "", deviceNumber: "", doctorName: "", joiningDate: "", leavingDate: "" });
+      
+      // Refresh all data
+      fetchRegisteredPatients();
+      fetchAvailableDevices();
+      fetchConnectedDevices();
+      fetchDischargedPatients();
+    } catch (error: any) {
+      toast({ title: "Discharge Failed", description: error.message || "Failed to discharge patient", variant: "destructive" });
+    } finally {
+      setIsDischarging(false);
+    }
   };
 
   const handleCreateNewDevice = async () => {
