@@ -24,14 +24,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Find the patient by name (not yet discharged)
+    const trimmedName = patientName.trim();
+    console.log("Looking for patient:", trimmedName);
+
+    // Find the patient by name (case-insensitive, not yet discharged)
     const { data: patient, error: patientError } = await supabaseAdmin
       .from("patients")
       .select("id, user_id, doctor_id, name, email, room")
-      .eq("name", patientName)
+      .ilike("name", trimmedName)
       .eq("is_discharged", false)
       .limit(1)
-      .single();
+      .maybeSingle();
+
+    console.log("Query result:", JSON.stringify({ patient, patientError }));
 
     if (patientError || !patient) {
       return new Response(JSON.stringify({ error: "Patient not found or already discharged" }), {
