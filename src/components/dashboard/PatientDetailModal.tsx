@@ -250,6 +250,13 @@ const PatientDetailModal = ({ isOpen, onClose, patient, vitals }: PatientDetailM
                   />
                 </div>
               </div>
+              ) : (
+                <div className="text-center py-8 rounded-xl bg-muted/50 border border-border">
+                  <Wifi className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+                  <p className="text-muted-foreground font-medium">No Device Connected</p>
+                  <p className="text-sm text-muted-foreground mt-1">Vitals will appear once an IoT device is assigned</p>
+                </div>
+              )}
 
               {/* Patient Info */}
               <div>
