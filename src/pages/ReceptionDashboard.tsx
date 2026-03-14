@@ -70,6 +70,7 @@ const ReceptionDashboard = () => {
     patientName: "", deviceNumber: "", doctorName: "", joiningDate: "", leavingDate: ""
   });
   const [isDischarging, setIsDischarging] = useState(false);
+  const [dischargedPatients, setDischargedPatients] = useState<DischargedPatient[]>([]);
 
   // New device state
   const [isCreatingDevice, setIsCreatingDevice] = useState(false);
