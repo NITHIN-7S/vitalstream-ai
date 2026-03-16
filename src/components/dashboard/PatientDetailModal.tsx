@@ -144,7 +144,7 @@ const PatientDetailModal = ({ isOpen, onClose, patient, vitals }: PatientDetailM
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-4 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-[800px] max-h-[90vh] bg-card rounded-2xl shadow-elevated z-50 overflow-hidden flex flex-col"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-[800px] max-h-[90vh] bg-card rounded-2xl shadow-elevated z-50 overflow-hidden flex flex-col"
           >
             {/* Header */}
             <div className={`p-6 border-b border-border ${config.bg}`}>
