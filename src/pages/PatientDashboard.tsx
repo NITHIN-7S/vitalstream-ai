@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Activity, Bell, Settings, LogOut, Heart, Thermometer, User, Phone, FileText, MapPin, Loader2, Lock, Eye, EyeOff, Upload, Download, Trash2, Menu, X } from "lucide-react";
 import VitalCard from "@/components/cards/VitalCard";
 import LiveChart from "@/components/dashboard/LiveChart";
-import ECGWave from "@/components/animations/ECGWave";
+
 import ContactForm from "@/components/dashboard/ContactForm";
 import NearbyHospitalsMap from "@/components/dashboard/NearbyHospitalsMap";
 import { supabase } from "@/integrations/supabase/client";
