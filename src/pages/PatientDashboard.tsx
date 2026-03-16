@@ -518,18 +518,6 @@ const PatientDashboard = () => {
                 </div>
               </motion.div>
 
-              {/* ECG Wave */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="glass rounded-xl p-6 shadow-card"
-              >
-                <h3 className="font-semibold text-foreground mb-4">Live ECG Monitor</h3>
-                <div className="h-24">
-                  <ECGWave className="w-full h-full" color="hsl(var(--destructive))" speed={2} />
-                </div>
-              </motion.div>
             </>
           )}
 

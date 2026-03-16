@@ -182,8 +182,9 @@ const DoctorDashboard = () => {
     try {
       const { data, error } = await supabase
         .from("patients")
-        .select("id, name, age, room, diagnosis, email, admission_date, status")
+        .select("id, name, age, room, diagnosis, email, admission_date, status, bed_number, emergency_contact, emergency_phone, user_id")
         .eq("doctor_id", userId)
+        .eq("is_discharged", false)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
