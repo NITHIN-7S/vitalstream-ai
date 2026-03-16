@@ -37,6 +37,10 @@ interface MyPatient {
   diagnosis?: string;
   email?: string;
   admission_date?: string;
+  bed_number?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  user_id?: string;
   status: "normal" | "warning" | "critical";
 }
 
@@ -182,8 +186,9 @@ const DoctorDashboard = () => {
     try {
       const { data, error } = await supabase
         .from("patients")
-        .select("id, name, age, room, diagnosis, email, admission_date, status")
+        .select("id, name, age, room, diagnosis, email, admission_date, status, bed_number, emergency_contact, emergency_phone, user_id")
         .eq("doctor_id", userId)
+        .eq("is_discharged", false)
         .order("created_at", { ascending: false });
 
       if (error) throw error;

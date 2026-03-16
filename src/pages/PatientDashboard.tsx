@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Activity, Bell, Settings, LogOut, Heart, Thermometer, User, Phone, FileText, MapPin, Loader2, Lock, Eye, EyeOff, Upload, Download, Trash2, Menu, X } from "lucide-react";
 import VitalCard from "@/components/cards/VitalCard";
 import LiveChart from "@/components/dashboard/LiveChart";
-import ECGWave from "@/components/animations/ECGWave";
+
 import ContactForm from "@/components/dashboard/ContactForm";
 import NearbyHospitalsMap from "@/components/dashboard/NearbyHospitalsMap";
 import { supabase } from "@/integrations/supabase/client";
@@ -518,18 +518,6 @@ const PatientDashboard = () => {
                 </div>
               </motion.div>
 
-              {/* ECG Wave */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="glass rounded-xl p-6 shadow-card"
-              >
-                <h3 className="font-semibold text-foreground mb-4">Live ECG Monitor</h3>
-                <div className="h-24">
-                  <ECGWave className="w-full h-full" color="hsl(var(--destructive))" speed={2} />
-                </div>
-              </motion.div>
             </>
           )}
 

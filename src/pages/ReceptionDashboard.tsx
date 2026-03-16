@@ -17,7 +17,7 @@ import DeviceActivity from "@/components/dashboard/DeviceActivity";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 interface Credentials { email: string; password: string; }
 
@@ -383,20 +383,33 @@ This is a computer-generated discharge summary.
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-10 flex justify-center">
-        <div className="w-full max-w-4xl">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="patients" className="gap-2"><Users className="h-4 w-4" /><span className="hidden sm:inline">Register Patient</span></TabsTrigger>
-              <TabsTrigger value="doctors" className="gap-2"><Stethoscope className="h-4 w-4" /><span className="hidden sm:inline">Register Doctor</span></TabsTrigger>
-              <TabsTrigger value="devices" className="gap-2"><Wifi className="h-4 w-4" /><span className="hidden sm:inline">Devices</span></TabsTrigger>
-              <TabsTrigger value="discharge" className="gap-2"><FileText className="h-4 w-4" /><span className="hidden sm:inline">Discharge</span></TabsTrigger>
-              <TabsTrigger value="manage-devices" className="gap-2"><Settings className="h-4 w-4" /><span className="hidden sm:inline">Manage</span></TabsTrigger>
-            </TabsList>
+      <main className="container mx-auto px-4 py-6">
+        {/* Top Navigation Buttons */}
+        <div className="flex items-center gap-3 mb-8 flex-wrap">
+          {[
+            { id: "patients", icon: UserPlus, label: "Register Patient" },
+            { id: "doctors", icon: Stethoscope, label: "Register Doctor" },
+            { id: "devices", icon: Wifi, label: "Devices" },
+            { id: "discharge", icon: FileText, label: "Discharge" },
+            { id: "manage-devices", icon: Settings, label: "Manage Devices" },
+          ].map(item => (
+            <Button
+              key={item.id}
+              variant={activeTab === item.id ? "default" : "outline"}
+              className="gap-2"
+              onClick={() => setActiveTab(item.id)}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Button>
+          ))}
+        </div>
 
-            {/* PATIENT REGISTRATION TAB */}
-            <TabsContent value="patients">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="w-full max-w-4xl mx-auto">
+          <AnimatePresence mode="wait">
+            {/* PATIENT REGISTRATION */}
+            {activeTab === "patients" && (
+              <motion.div key="patients" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Register New Patient</CardTitle>
@@ -489,11 +502,11 @@ This is a computer-generated discharge summary.
                   </CardContent>
                 </Card>
               </motion.div>
-            </TabsContent>
+            )}
 
-            {/* DOCTOR REGISTRATION TAB */}
-            <TabsContent value="doctors">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            {/* DOCTOR REGISTRATION */}
+            {activeTab === "doctors" && (
+              <motion.div key="doctors" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Register New Doctor</CardTitle>
@@ -532,16 +545,18 @@ This is a computer-generated discharge summary.
                   </CardContent>
                 </Card>
               </motion.div>
-            </TabsContent>
+            )}
 
-            {/* DEVICE ACTIVITY TAB */}
-            <TabsContent value="devices">
-              <DeviceActivity role="receptionist" />
-            </TabsContent>
+            {/* DEVICE ACTIVITY */}
+            {activeTab === "devices" && (
+              <motion.div key="devices" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+                <DeviceActivity role="receptionist" />
+              </motion.div>
+            )}
 
-            {/* DISCHARGE SHEET TAB */}
-            <TabsContent value="discharge">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            {/* DISCHARGE SHEET */}
+            {activeTab === "discharge" && (
+              <motion.div key="discharge" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-primary" />Generate Discharge Sheet</CardTitle>
@@ -608,12 +623,11 @@ This is a computer-generated discharge summary.
                   </Card>
                 )}
               </motion.div>
-            </TabsContent>
+            )}
 
-            {/* MANAGE DEVICES TAB */}
-            <TabsContent value="manage-devices">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                {/* Add New Device */}
+            {/* MANAGE DEVICES */}
+            {activeTab === "manage-devices" && (
+              <motion.div key="manage" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Plus className="h-5 w-5 text-primary" />Add New Device</CardTitle>
@@ -631,7 +645,6 @@ This is a computer-generated discharge summary.
                   </CardContent>
                 </Card>
 
-                {/* Connected Devices with Disconnect */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Unplug className="h-5 w-5 text-primary" />Connected Devices</CardTitle>
@@ -669,8 +682,8 @@ This is a computer-generated discharge summary.
                   </CardContent>
                 </Card>
               </motion.div>
-            </TabsContent>
-          </Tabs>
+            )}
+          </AnimatePresence>
         </div>
       </main>
 
