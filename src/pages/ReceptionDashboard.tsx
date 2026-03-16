@@ -383,16 +383,31 @@ This is a computer-generated discharge summary.
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-10 flex justify-center">
-        <div className="w-full max-w-4xl">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="patients" className="gap-2"><Users className="h-4 w-4" /><span className="hidden sm:inline">Register Patient</span></TabsTrigger>
-              <TabsTrigger value="doctors" className="gap-2"><Stethoscope className="h-4 w-4" /><span className="hidden sm:inline">Register Doctor</span></TabsTrigger>
-              <TabsTrigger value="devices" className="gap-2"><Wifi className="h-4 w-4" /><span className="hidden sm:inline">Devices</span></TabsTrigger>
-              <TabsTrigger value="discharge" className="gap-2"><FileText className="h-4 w-4" /><span className="hidden sm:inline">Discharge</span></TabsTrigger>
-              <TabsTrigger value="manage-devices" className="gap-2"><Settings className="h-4 w-4" /><span className="hidden sm:inline">Manage</span></TabsTrigger>
-            </TabsList>
+      <main className="container mx-auto px-4 py-6">
+        {/* Top Navigation Buttons */}
+        <div className="flex items-center gap-3 mb-8 flex-wrap">
+          {[
+            { id: "patients", icon: UserPlus, label: "Register Patient" },
+            { id: "doctors", icon: Stethoscope, label: "Register Doctor" },
+            { id: "devices", icon: Wifi, label: "Devices" },
+            { id: "discharge", icon: FileText, label: "Discharge" },
+            { id: "manage-devices", icon: Settings, label: "Manage Devices" },
+          ].map(item => (
+            <Button
+              key={item.id}
+              variant={activeTab === item.id ? "default" : "outline"}
+              className="gap-2"
+              onClick={() => setActiveTab(item.id)}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Button>
+          ))}
+        </div>
+
+        <div className="w-full max-w-4xl mx-auto">
+          <AnimatePresence mode="wait">
+            {activeTab === "patients" && (
 
             {/* PATIENT REGISTRATION TAB */}
             <TabsContent value="patients">
