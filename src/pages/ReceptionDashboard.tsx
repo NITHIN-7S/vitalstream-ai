@@ -407,11 +407,9 @@ This is a computer-generated discharge summary.
 
         <div className="w-full max-w-4xl mx-auto">
           <AnimatePresence mode="wait">
+            {/* PATIENT REGISTRATION */}
             {activeTab === "patients" && (
-
-            {/* PATIENT REGISTRATION TAB */}
-            <TabsContent value="patients">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <motion.div key="patients" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Register New Patient</CardTitle>
@@ -504,11 +502,11 @@ This is a computer-generated discharge summary.
                   </CardContent>
                 </Card>
               </motion.div>
-            </TabsContent>
+            )}
 
-            {/* DOCTOR REGISTRATION TAB */}
-            <TabsContent value="doctors">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            {/* DOCTOR REGISTRATION */}
+            {activeTab === "doctors" && (
+              <motion.div key="doctors" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Register New Doctor</CardTitle>
@@ -547,16 +545,18 @@ This is a computer-generated discharge summary.
                   </CardContent>
                 </Card>
               </motion.div>
-            </TabsContent>
+            )}
 
-            {/* DEVICE ACTIVITY TAB */}
-            <TabsContent value="devices">
-              <DeviceActivity role="receptionist" />
-            </TabsContent>
+            {/* DEVICE ACTIVITY */}
+            {activeTab === "devices" && (
+              <motion.div key="devices" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+                <DeviceActivity role="receptionist" />
+              </motion.div>
+            )}
 
-            {/* DISCHARGE SHEET TAB */}
-            <TabsContent value="discharge">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            {/* DISCHARGE SHEET */}
+            {activeTab === "discharge" && (
+              <motion.div key="discharge" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-primary" />Generate Discharge Sheet</CardTitle>
@@ -623,12 +623,11 @@ This is a computer-generated discharge summary.
                   </Card>
                 )}
               </motion.div>
-            </TabsContent>
+            )}
 
-            {/* MANAGE DEVICES TAB */}
-            <TabsContent value="manage-devices">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                {/* Add New Device */}
+            {/* MANAGE DEVICES */}
+            {activeTab === "manage-devices" && (
+              <motion.div key="manage" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Plus className="h-5 w-5 text-primary" />Add New Device</CardTitle>
@@ -646,7 +645,6 @@ This is a computer-generated discharge summary.
                   </CardContent>
                 </Card>
 
-                {/* Connected Devices with Disconnect */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Unplug className="h-5 w-5 text-primary" />Connected Devices</CardTitle>
@@ -684,8 +682,8 @@ This is a computer-generated discharge summary.
                   </CardContent>
                 </Card>
               </motion.div>
-            </TabsContent>
-          </Tabs>
+            )}
+          </AnimatePresence>
         </div>
       </main>
 
