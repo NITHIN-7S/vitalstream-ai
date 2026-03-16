@@ -37,6 +37,10 @@ interface MyPatient {
   diagnosis?: string;
   email?: string;
   admission_date?: string;
+  bed_number?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  user_id?: string;
   status: "normal" | "warning" | "critical";
 }
 
